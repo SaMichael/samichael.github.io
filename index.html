@@ -249,7 +249,7 @@
         <blockquote>
 <p>文章转载自内网，挺不错的，分享下<br>程序有时会出现CPU使用率过高的情况，以下是对jvm线程的一次排查。<br>首先，top命令看一下情况，是否为java的进程导致的CPU使用率过高，CPU使用率理论上不应该超过CPU核数＊100%。</p>
 </blockquote>
-<h1 id="u6392_u67E5_u6B65_u9AA4"><a href="#u6392_u67E5_u6B65_u9AA4" class="headerlink" title="排查步骤"></a>排查步骤</h1><h2 id="u6B65_u9AA4_u4E00"><a href="#u6B65_u9AA4_u4E00" class="headerlink" title="步骤一"></a>步骤一</h2><p>命令<br>    ·top·<br><img src="http://i4.tietuku.com/ac5ce6bc242a649a.png" alt=""></p>
+<h1 id="u6392_u67E5_u6B65_u9AA4"><a href="#u6392_u67E5_u6B65_u9AA4" class="headerlink" title="排查步骤"></a>排查步骤</h1><h2 id="u6B65_u9AA4_u4E00"><a href="#u6B65_u9AA4_u4E00" class="headerlink" title="步骤一"></a>步骤一</h2><p>命令<br>    · top ·<br><img src="http://i4.tietuku.com/ac5ce6bc242a649a.png" alt=""></p>
 <h2 id="u6B65_u9AA4_u4E8C"><a href="#u6B65_u9AA4_u4E8C" class="headerlink" title="步骤二"></a>步骤二</h2><p>继续使用top命令，但这次是看这个进程包含的线程cpu使用情况<br>命令：<br>    ‘ top -Hp 29605 -d 1 -n3 ‘<br><img src="http://i4.tietuku.com/671357c2d1095854.png" alt=""></p>
 <h2 id="u6B65_u9AA4_u4E09"><a href="#u6B65_u9AA4_u4E09" class="headerlink" title="步骤三"></a>步骤三</h2><p>图中的nid，是根据第二步的top中的PID转换为16进制后，查到的。<br>命令：<br>    ‘ jstack -l 29605|grep -A 20 “74d8” ‘<br><img src="http://i4.tietuku.com/95b81534c010e361.png" alt=""></p>
 <p>到此基本定位了问题，接下来是分析代码看如何解决了</p>
