@@ -3,21 +3,33 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Hello World | SaMicahel&#39;s blog</title>
+  <title>cpu使用率过高 | SaMicahel&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+  <meta name="description" content="文章转载自内网，挺不错的，分享下程序有时会出现CPU使用率过高的情况，以下是对jvm线程的一次排查。首先，top命令看一下情况，是否为java的进程导致的CPU使用率过高，CPU使用率理论上不应该超过CPU核数＊100%。
+
+排查步骤步骤一命令    top
+步骤二继续使用top命令，但这次是看这个进程包含的线程cpu使用情况命令：    top -Hp 29605 -d 1 -n3
+步骤三图中的">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://yoursite.com/2016/02/01/hello-world/index.html">
+<meta property="og:title" content="cpu使用率过高">
+<meta property="og:url" content="http://yoursite.com/2016/02/02/cpu使用率过高排查/index.html">
 <meta property="og:site_name" content="SaMicahel's blog">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
-<meta property="og:updated_time" content="2016-02-01T08:53:31.000Z">
+<meta property="og:description" content="文章转载自内网，挺不错的，分享下程序有时会出现CPU使用率过高的情况，以下是对jvm线程的一次排查。首先，top命令看一下情况，是否为java的进程导致的CPU使用率过高，CPU使用率理论上不应该超过CPU核数＊100%。
+
+排查步骤步骤一命令    top
+步骤二继续使用top命令，但这次是看这个进程包含的线程cpu使用情况命令：    top -Hp 29605 -d 1 -n3
+步骤三图中的">
+<meta property="og:image" content="http://i4.tietuku.com/ac5ce6bc242a649a.png">
+<meta property="og:image" content="http://i4.tietuku.com/671357c2d1095854.png">
+<meta property="og:image" content="http://i4.tietuku.com/95b81534c010e361.png">
+<meta property="og:updated_time" content="2016-02-02T03:45:08.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hello World">
-<meta name="twitter:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+<meta name="twitter:title" content="cpu使用率过高">
+<meta name="twitter:description" content="文章转载自内网，挺不错的，分享下程序有时会出现CPU使用率过高的情况，以下是对jvm线程的一次排查。首先，top命令看一下情况，是否为java的进程导致的CPU使用率过高，CPU使用率理论上不应该超过CPU核数＊100%。
+
+排查步骤步骤一命令    top
+步骤二继续使用top命令，但这次是看这个进程包含的线程cpu使用情况命令：    top -Hp 29605 -d 1 -n3
+步骤三图中的">
   
     <link rel="alternative" href="/atom.xml" title="SaMicahel&#39;s blog" type="application/atom+xml">
   
@@ -218,11 +230,11 @@ Quick">
         </header>                
     </div>
 </nav>
-      <div class="body-wrap"><article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
+      <div class="body-wrap"><article id="post-cpu使用率过高排查" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2016/02/01/hello-world/" class="article-date">
-      <time datetime="2016-02-01T08:53:31.000Z" itemprop="datePublished">2016-02-01</time>
+      <a href="/2016/02/02/cpu使用率过高排查/" class="article-date">
+      <time datetime="2016-02-02T02:15:18.000Z" itemprop="datePublished">2016-02-02</time>
 </a>
     </div>
   
@@ -235,7 +247,7 @@ Quick">
         
   
     <h1 class="article-title" itemprop="name">
-      Hello World
+      cpu使用率过高
     </h1>
   
 
@@ -252,15 +264,13 @@ Quick">
     <div class="article-entry" itemprop="articleBody">
       
           
-        <p>Welcome to <a href="http://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick_Start"><a href="#Quick_Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create_a_new_post"><a href="#Create_a_new_post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run_server"><a href="#Run_server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate_static_files"><a href="#Generate_static_files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy_to_remote_sites"><a href="#Deploy_to_remote_sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
+        <blockquote>
+<p>文章转载自内网，挺不错的，分享下<br>程序有时会出现CPU使用率过高的情况，以下是对jvm线程的一次排查。<br>首先，top命令看一下情况，是否为java的进程导致的CPU使用率过高，CPU使用率理论上不应该超过CPU核数＊100%。</p>
+</blockquote>
+<h1 id="u6392_u67E5_u6B65_u9AA4"><a href="#u6392_u67E5_u6B65_u9AA4" class="headerlink" title="排查步骤"></a>排查步骤</h1><h2 id="u6B65_u9AA4_u4E00"><a href="#u6B65_u9AA4_u4E00" class="headerlink" title="步骤一"></a>步骤一</h2><p>命令<br>    <code>top</code><br><img src="http://i4.tietuku.com/ac5ce6bc242a649a.png" alt=""></p>
+<h2 id="u6B65_u9AA4_u4E8C"><a href="#u6B65_u9AA4_u4E8C" class="headerlink" title="步骤二"></a>步骤二</h2><p>继续使用top命令，但这次是看这个进程包含的线程cpu使用情况<br>命令：<br>    <code>top -Hp 29605 -d 1 -n3</code><br><img src="http://i4.tietuku.com/671357c2d1095854.png" alt=""></p>
+<h2 id="u6B65_u9AA4_u4E09"><a href="#u6B65_u9AA4_u4E09" class="headerlink" title="步骤三"></a>步骤三</h2><p>图中的nid，是根据第二步的top中的PID转换为16进制后，查到的。<br>命令：<br>    <code>jstack -l 29605|grep -A 20 &quot;74d8&quot;</code><br><img src="http://i4.tietuku.com/95b81534c010e361.png" alt=""></p>
+<p>到此基本定位了问题，接下来是分析代码看如何解决了</p>
 
       
     </div>
@@ -269,13 +279,13 @@ Quick">
   
     
     <div class="copyright">
-        <p><span>本文标题:</span><a href="/2016/02/01/hello-world/">Hello World</a></p>
+        <p><span>本文标题:</span><a href="/2016/02/02/cpu使用率过高排查/">cpu使用率过高</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 陆文彬 的个人博客">陆文彬</a></p>
-        <p><span>发布时间:</span>2016年02月01日 - 16时53分</p>
-        <p><span>最后更新:</span>2016年02月01日 - 16时53分</p>
+        <p><span>发布时间:</span>2016年02月02日 - 10时15分</p>
+        <p><span>最后更新:</span>2016年02月02日 - 11时45分</p>
         <p>
-            <span>原始链接:</span><a class="post-url" href="/2016/02/01/hello-world/" title="Hello World">http://yoursite.com/2016/02/01/hello-world/</a>
-            <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/01/hello-world/　　作者: 陆文彬" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <span>原始链接:</span><a class="post-url" href="/2016/02/02/cpu使用率过高排查/" title="cpu使用率过高">http://yoursite.com/2016/02/02/cpu使用率过高排查/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/02/cpu使用率过高排查/　　作者: 陆文彬" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
             <script src="/js/clipboard.min.js"></script>
             <script> var clipboard = new Clipboard('.copy-path'); </script>
         </p>
@@ -289,11 +299,17 @@ Quick">
     <nav id="article-nav">
         
             <div id="article-nav-newer" class="article-nav-title">
-                <a href="/2016/02/02/cpu使用率过高排查/">
+                <a href="/2016/02/02/cpu使用率过高/">
                     cpu使用率过高
                 </a>
             </div>
         
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2016/02/01/hello-world/">
+                    Hello World
+                </a>
+            </div>
         
     </nav>
 
@@ -302,7 +318,7 @@ Quick">
 
     <div id="toc" class="toc-article">
     <strong class="toc-title">文章目录</strong>
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Quick_Start"><span class="toc-number">1.</span> <span class="toc-text">Quick Start</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Create_a_new_post"><span class="toc-number">1.1.</span> <span class="toc-text">Create a new post</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Run_server"><span class="toc-number">1.2.</span> <span class="toc-text">Run server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Generate_static_files"><span class="toc-number">1.3.</span> <span class="toc-text">Generate static files</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deploy_to_remote_sites"><span class="toc-number">1.4.</span> <span class="toc-text">Deploy to remote sites</span></a></li></ol></li></ol>
+    <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#u6392_u67E5_u6B65_u9AA4"><span class="toc-number">1.</span> <span class="toc-text">排查步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#u6B65_u9AA4_u4E00"><span class="toc-number">1.1.</span> <span class="toc-text">步骤一</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#u6B65_u9AA4_u4E8C"><span class="toc-number">1.2.</span> <span class="toc-text">步骤二</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#u6B65_u9AA4_u4E09"><span class="toc-number">1.3.</span> <span class="toc-text">步骤三</span></a></li></ol></li></ol>
 </div>
 <style>
     .left-col .switch-btn {
@@ -370,7 +386,7 @@ Quick">
 
     <div class="scroll" id="post-nav-button">
         
-            <a href="/2016/02/02/cpu使用率过高排查/" title="上一篇: cpu使用率过高">
+            <a href="/2016/02/02/cpu使用率过高/" title="上一篇: cpu使用率过高">
                 <i class="fa fa-angle-left"></i>
             </a>
         
@@ -378,7 +394,9 @@ Quick">
         <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
 
         
-            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+            <a href="/2016/02/01/hello-world/" title="下一篇: Hello World">
+                <i class="fa fa-angle-right"></i>
+            </a>
         
     </div>
 
