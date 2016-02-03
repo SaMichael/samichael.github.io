@@ -3,21 +3,36 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Hello World | SaMicahel&#39;s blog</title>
+  <title>hessian序列化bug分析 | SaMicahel&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+  <meta name="description" content="跟hessian的Ref机制有关，对于Timestamp对象，解析器和反解析器在Ref上有不一致的地方导致。
+
+##hessian序列化整体分析
+
+
+SerializeFactory来管理这些序列化类，它们都是AbstractSerializer的子类，实现共同的接口void writeObject(Object obj, AbstractHessianOutput out)​；工厂根据对象类型来">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://yoursite.com/2016/02/01/hello-world/index.html">
+<meta property="og:title" content="hessian序列化bug分析">
+<meta property="og:url" content="http://yoursite.com/2016/02/03/hessian序列化bug分析/index.html">
 <meta property="og:site_name" content="SaMicahel's blog">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
-<meta property="og:updated_time" content="2016-02-01T08:53:31.000Z">
+<meta property="og:description" content="跟hessian的Ref机制有关，对于Timestamp对象，解析器和反解析器在Ref上有不一致的地方导致。
+
+##hessian序列化整体分析
+
+
+SerializeFactory来管理这些序列化类，它们都是AbstractSerializer的子类，实现共同的接口void writeObject(Object obj, AbstractHessianOutput out)​；工厂根据对象类型来">
+<meta property="og:image" content="http://i13.tietuku.com/9ca5080bf9e749c5.png">
+<meta property="og:image" content="http://i13.tietuku.com/f115f76b2dc8d8a4.png">
+<meta property="og:image" content="http://i13.tietuku.com/e59df7cb657b9572.png">
+<meta property="og:updated_time" content="2016-02-03T05:53:24.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hello World">
-<meta name="twitter:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.
-Quick">
+<meta name="twitter:title" content="hessian序列化bug分析">
+<meta name="twitter:description" content="跟hessian的Ref机制有关，对于Timestamp对象，解析器和反解析器在Ref上有不一致的地方导致。
+
+##hessian序列化整体分析
+
+
+SerializeFactory来管理这些序列化类，它们都是AbstractSerializer的子类，实现共同的接口void writeObject(Object obj, AbstractHessianOutput out)​；工厂根据对象类型来">
   
     <link rel="alternative" href="/atom.xml" title="SaMicahel&#39;s blog" type="application/atom+xml">
   
@@ -218,11 +233,11 @@ Quick">
         </header>                
     </div>
 </nav>
-      <div class="body-wrap"><article id="post-hello-world" class="article article-type-post" itemscope itemprop="blogPost">
+      <div class="body-wrap"><article id="post-hessian序列化bug分析" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2016/02/01/hello-world/" class="article-date">
-      <time datetime="2016-02-01T08:53:31.000Z" itemprop="datePublished">2016-02-01</time>
+      <a href="/2016/02/03/hessian序列化bug分析/" class="article-date">
+      <time datetime="2016-02-03T03:52:16.000Z" itemprop="datePublished">2016-02-03</time>
 </a>
     </div>
   
@@ -235,7 +250,7 @@ Quick">
         
   
     <h1 class="article-title" itemprop="name">
-      Hello World
+      hessian序列化bug分析
     </h1>
   
 
@@ -243,8 +258,16 @@ Quick">
       
       <div class="article-info article-info-post">
         
+    <div class="article-category tagcloud">
+    <a class="article-category-link" href="/categories/中间件/">中间件</a>
+    </div>
+
 
         
+    <div class="article-tag tagcloud">
+        <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/hessian/">hessian</a></li></ul>
+    </div>
+
         <div class="clearfix"></div>
       </div>
       
@@ -252,15 +275,18 @@ Quick">
     <div class="article-entry" itemprop="articleBody">
       
           
-        <p>Welcome to <a href="http://hexo.io/" target="_blank" rel="external">Hexo</a>! This is your very first post. Check <a href="http://hexo.io/docs/" target="_blank" rel="external">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="http://hexo.io/docs/troubleshooting.html" target="_blank" rel="external">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="external">GitHub</a>.</p>
-<h2 id="Quick_Start"><a href="#Quick_Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create_a_new_post"><a href="#Create_a_new_post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/writing.html" target="_blank" rel="external">Writing</a></p>
-<h3 id="Run_server"><a href="#Run_server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/server.html" target="_blank" rel="external">Server</a></p>
-<h3 id="Generate_static_files"><a href="#Generate_static_files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/generating.html" target="_blank" rel="external">Generating</a></p>
-<h3 id="Deploy_to_remote_sites"><a href="#Deploy_to_remote_sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="http://hexo.io/docs/deployment.html" target="_blank" rel="external">Deployment</a></p>
+        <blockquote>
+<p>跟hessian的Ref机制有关，对于Timestamp对象，解析器和反解析器在Ref上有不一致的地方导致。</p>
+</blockquote>
+<p>##hessian序列化整体分析<br><img src="http://i13.tietuku.com/9ca5080bf9e749c5.png" alt="序列化器类图"></p>
+<hr>
+<blockquote>
+<p>SerializeFactory来管理这些序列化类，它们都是AbstractSerializer的子类，实现共同的接口void writeObject(Object obj, AbstractHessianOutput out)​；工厂根据对象类型来创建不同的序列化类，BasicSerializer是针对基本类型包括包装类型，JavaSerializer是自定义对象类型，SqlDateSerializer则是针对java.sql.Date​、java.sql.Time、java.sql.Timestamp类型的，其他的都是顾名思义。这里有一个关键点，那就是java.util.Date类型的是放在BasicSerializer中的.</p>
+</blockquote>
+<p>##序列化快的机制-Ref<br>Hessian序列化很快的一个原因是Ref机制，这里我们对它详细地描述下。我们会发现大多数序列化类开始之前都有这样一段代码：<br><img src="http://i13.tietuku.com/f115f76b2dc8d8a4.png" alt=""><br>这段代码的主要作用就是如果map里有与该对象内存地址相同的，我们就不序列化该对象本身，只序列化它的引用。具体如下：<br><img src="http://i13.tietuku.com/e59df7cb657b9572.png" alt=""><br>_refs是hessian实现的一个类似hashmap的数据结构，有自己的散列和rehash。key是被序列化对象，value是加入时_refs的的大小。get是通过判断内存地址来比较的。如果找到一样的，就序列化它的引用，这是序列化流里会有个标识为r以及加入_refs时的顺序ref，如果找不到，就把它放到这个map里。</p>
+<p>反序列化时，读取map，遍历，对key和value分别反解析并放到map中，中间采用了大量的递归调用。本地维护了一个ArrayList ：_refs（同名不同的数据结构），每一个对象在被反解析时（基本、包装类型除外），会将自己本身加入到该list中。读到对象类型为r时，会从_refs里直接获取该对象，get(index)，index为序列化时写入的ref，直接将字段set为获取的对象。</p>
+<p>hessian并没有在序列化时将_refs表通过网络传过去，而是通过同样的解析和反解析顺序，保证了两边从_refs里获取对象的一致性。那么，它就要保证添加Ref和读取Ref的逻辑是一致的，如果不一致就会出现类型不一致的异常。</p>
+<p>##序列化bug原因分析<br>那么我们的service为什么会出错呢？因为hessian在序列化时Timestamp是走的SqlDateSerializer，这个序列化器是会加入到_refs这个map里的，但是读取的时候，Timestamp却不会加入到客户端里地_refs表里。这时候我们两端_refs就不一致了。而phoneList在数据库phone字段为空时都会赋为ArrayUtils.EMPTY_STRING_ARRAY，它是一个final static对象。String[]是会写_refs表的，如果有第二个String[]跟第一个相等，那么它会被标记为引用类型并记下加入表时的顺序。这时候反序列化的时候timestamp是不会加入_refs的，反序列化出来String[]的ref(即list中的index)就有偏差了。java.util.Date是被视为基础类型的，服务和客户端都不会写入_refs表。</p>
 
       
     </div>
@@ -269,13 +295,13 @@ Quick">
   
     
     <div class="copyright">
-        <p><span>本文标题:</span><a href="/2016/02/01/hello-world/">Hello World</a></p>
+        <p><span>本文标题:</span><a href="/2016/02/03/hessian序列化bug分析/">hessian序列化bug分析</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 SaMichael 的个人博客">SaMichael</a></p>
-        <p><span>发布时间:</span>2016年02月01日 - 16时53分</p>
-        <p><span>最后更新:</span>2016年02月01日 - 16时53分</p>
+        <p><span>发布时间:</span>2016年02月03日 - 11时52分</p>
+        <p><span>最后更新:</span>2016年02月03日 - 13时53分</p>
         <p>
-            <span>原始链接:</span><a class="post-url" href="/2016/02/01/hello-world/" title="Hello World">http://yoursite.com/2016/02/01/hello-world/</a>
-            <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/01/hello-world/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
+            <span>原始链接:</span><a class="post-url" href="/2016/02/03/hessian序列化bug分析/" title="hessian序列化bug分析">http://yoursite.com/2016/02/03/hessian序列化bug分析/</a>
+            <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/03/hessian序列化bug分析/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
             <script src="/js/clipboard.min.js"></script>
             <script> var clipboard = new Clipboard('.copy-path'); </script>
         </p>
@@ -288,12 +314,12 @@ Quick">
 
     <nav id="article-nav">
         
-            <div id="article-nav-newer" class="article-nav-title">
-                <a href="/2016/02/02/cpu使用率过高/">
-                    cpu使用率过高
+        
+            <div id="article-nav-older" class="article-nav-title">
+                <a href="/2016/02/02/我的博客搭建历程/">
+                    我的博客搭建历程
                 </a>
             </div>
-        
         
     </nav>
 
@@ -302,7 +328,7 @@ Quick">
 
     <div id="toc" class="toc-article">
     <strong class="toc-title">文章目录</strong>
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Quick_Start"><span class="toc-number">1.</span> <span class="toc-text">Quick Start</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Create_a_new_post"><span class="toc-number">1.1.</span> <span class="toc-text">Create a new post</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Run_server"><span class="toc-number">1.2.</span> <span class="toc-text">Run server</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Generate_static_files"><span class="toc-number">1.3.</span> <span class="toc-text">Generate static files</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deploy_to_remote_sites"><span class="toc-number">1.4.</span> <span class="toc-text">Deploy to remote sites</span></a></li></ol></li></ol>
+    
 </div>
 <style>
     .left-col .switch-btn {
@@ -370,15 +396,15 @@ Quick">
 
     <div class="scroll" id="post-nav-button">
         
-            <a href="/2016/02/02/cpu使用率过高/" title="上一篇: cpu使用率过高">
-                <i class="fa fa-angle-left"></i>
-            </a>
+            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
         
 
         <a title="文章列表"><i class="fa fa-bars"></i><i class="fa fa-times"></i></a>
 
         
-            <a href="/" title="回到主页"><i class="fa fa-home"></i></a>
+            <a href="/2016/02/02/我的博客搭建历程/" title="下一篇: 我的博客搭建历程">
+                <i class="fa fa-angle-right"></i>
+            </a>
         
     </div>
 
