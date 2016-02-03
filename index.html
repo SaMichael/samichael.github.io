@@ -250,14 +250,16 @@
 <p>跟hessian的Ref机制有关，对于Timestamp对象，解析器和反解析器在Ref上有不一致的地方导致。</p>
 </blockquote>
 <h2 id="hessian_u5E8F_u5217_u5316_u6574_u4F53_u5206_u6790"><a href="#hessian_u5E8F_u5217_u5316_u6574_u4F53_u5206_u6790" class="headerlink" title="hessian序列化整体分析"></a>hessian序列化整体分析</h2><p><img src="http://i13.tietuku.com/9ca5080bf9e749c5.png" alt="序列化器类图"></p>
-<hr>
 <blockquote>
 <p>SerializeFactory来管理这些序列化类，它们都是AbstractSerializer的子类，实现共同的接口void writeObject(Object obj, AbstractHessianOutput out)​；工厂根据对象类型来创建不同的序列化类，BasicSerializer是针对基本类型包括包装类型，JavaSerializer是自定义对象类型，SqlDateSerializer则是针对java.sql.Date​、java.sql.Time、java.sql.Timestamp类型的，其他的都是顾名思义。这里有一个关键点，那就是java.util.Date类型的是放在BasicSerializer中的.</p>
 </blockquote>
-<h2 id="u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref"><a href="#u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref" class="headerlink" title="序列化快的机制-Ref"></a>序列化快的机制-Ref</h2><p>Hessian序列化很快的一个原因是Ref机制，这里我们对它详细地描述下。我们会发现大多数序列化类开始之前都有这样一段代码：<br><img src="http://i13.tietuku.com/f115f76b2dc8d8a4.png" alt=""><br>这段代码的主要作用就是如果map里有与该对象内存地址相同的，我们就不序列化该对象本身，只序列化它的引用。具体如下：<br><img src="http://i13.tietuku.com/e59df7cb657b9572.png" alt=""><br>_refs是hessian实现的一个类似hashmap的数据结构，有自己的散列和rehash。key是被序列化对象，value是加入时<em>_refs</em>的的大小。get是通过判断内存地址来比较的。如果找到一样的，就序列化它的引用，这是序列化流里会有个标识为r以及加入_refs时的顺序ref，如果找不到，就把它放到这个map里。</p>
+<h2 id="u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref"><a href="#u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref" class="headerlink" title="序列化快的机制-Ref"></a>序列化快的机制-Ref</h2><p>Hessian序列化很快的一个原因是Ref机制，这里我们对它详细地描述下。我们会发现大多数序列化类开始之前都有这样一段代码：<br><img src="http://i13.tietuku.com/f115f76b2dc8d8a4.png" alt=""><br>这段代码的主要作用就是如果map里有与该对象内存地址相同的，我们就不序列化该对象本身，只序列化它的引用。具体如下：<br><img src="http://i13.tietuku.com/e59df7cb657b9572.png" alt=""></p>
+<p>_refs是hessian实现的一个类似hashmap的数据结构，有自己的散列和rehash。key是被序列化对象，value是加入时<strong>_refs</strong>的的大小。get是通过判断内存地址来比较的。如果找到一样的，就序列化它的引用，这是序列化流里会有个标识为r以及加入_refs时的顺序ref，如果找不到，就把它放到这个map里。</p>
 <p>反序列化时，读取map，遍历，对key和value分别反解析并放到map中，中间采用了大量的递归调用。本地维护了一个ArrayList ：_refs（同名不同的数据结构），每一个对象在被反解析时（基本、包装类型除外），会将自己本身加入到该list中。读到对象类型为r时，会从_refs里直接获取该对象，get(index)，index为序列化时写入的ref，直接将字段set为获取的对象。</p>
 <p>hessian并没有在序列化时将_refs表通过网络传过去，而是通过同样的解析和反解析顺序，保证了两边从_refs里获取对象的一致性。那么，它就要保证添加Ref和读取Ref的逻辑是一致的，如果不一致就会出现类型不一致的异常。</p>
-<h2 id="u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790"><a href="#u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790" class="headerlink" title="序列化bug原因分析"></a>序列化bug原因分析</h2><p>那么我们的service为什么会出错呢？因为hessian在序列化时Timestamp是走的SqlDateSerializer，这个序列化器是会加入到_refs这个map里的，但是读取的时候，Timestamp却不会加入到客户端里地_refs表里。这时候我们两端_refs就不一致了。而phoneList在数据库phone字段为空时都会赋为ArrayUtils.EMPTY_STRING_ARRAY，它是一个final static对象。String[]是会写_refs表的，如果有第二个String[]跟第一个相等，那么它会被标记为引用类型并记下加入表时的顺序。这时候反序列化的时候timestamp是不会加入_refs的，反序列化出来String[]的ref(即list中的index)就有偏差了。java.util.Date是被视为基础类型的，服务和客户端都不会写入_refs表。</p>
+<h2 id="u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790"><a href="#u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790" class="headerlink" title="序列化bug原因分析"></a>序列化bug原因分析</h2><blockquote>
+<p>那么我们的service为什么会出错呢？因为hessian在序列化时Timestamp是走的SqlDateSerializer，这个序列化器是会加入到_refs这个map里的，但是读取的时候，Timestamp却不会加入到客户端里地_refs表里。这时候我们两端_refs就不一致了。而phoneList在数据库phone字段为空时都会赋为ArrayUtils.EMPTY_STRING_ARRAY，它是一个final static对象。String[]是会写_refs表的，如果有第二个String[]跟第一个相等，那么它会被标记为引用类型并记下加入表时的顺序。这时候反序列化的时候timestamp是不会加入_refs的，反序列化出来String[]的ref(即list中的index)就有偏差了。java.util.Date是被视为基础类型的，服务和客户端都不会写入_refs表。</p>
+</blockquote>
 
       
     </div>
