@@ -219,6 +219,59 @@
 </nav>
       <div class="body-wrap">
   
+    <article id="post-学习资源" class="article article-type-post" itemscope itemprop="blogPost">
+  
+    <div class="article-meta">
+      <a href="/2016/02/03/学习资源/" class="article-date">
+      <time datetime="2016-02-03T08:43:42.000Z" itemprop="datePublished">2016-02-03</time>
+</a>
+    </div>
+  
+  <div class="article-inner">
+    
+      <input type="hidden" class="isFancy" />
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2016/02/03/学习资源/">学习资源</a>
+    </h1>
+  
+
+      </header>
+      
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+          
+        <p><a href="http://m.open-open.com/m/news/view/62b369" target="_blank" rel="external">java工程师成神之路</a><br><a href="http://www.open-open.com/lib/view/open1390916852007.html" target="_blank" rel="external">JVM性能调优监控工具</a>，该网站下还有很多其他资源</p>
+
+      
+    </div>
+    
+    <div class="article-info article-info-index">
+      
+      
+
+      
+      
+      <div class="clearfix"></div>
+    </div>
+    
+  </div>
+  
+</article>
+
+
+
+
+
+
+
+
+  
     <article id="post-hessian序列化bug分析" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
@@ -255,7 +308,7 @@
 </blockquote>
 <h2 id="u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref"><a href="#u5E8F_u5217_u5316_u5FEB_u7684_u673A_u5236-Ref" class="headerlink" title="序列化快的机制-Ref"></a>序列化快的机制-Ref</h2><p>Hessian序列化很快的一个原因是Ref机制，这里我们对它详细地描述下。我们会发现大多数序列化类开始之前都有这样一段代码：<br><img src="http://i13.tietuku.com/f115f76b2dc8d8a4.png" alt=""><br>这段代码的主要作用就是如果map里有与该对象内存地址相同的，我们就不序列化该对象本身，只序列化它的引用。具体如下：<br><img src="http://i13.tietuku.com/e59df7cb657b9572.png" alt=""></p>
 <blockquote>
-<p>  _refs是hessian实现的一个类似hashmap的数据结构，有自己的散列和rehash。key是被序列化对象，value是加入时<code>_refs</code>的的大小。get是通过判断内存地址来比较的。如果找到一样的，就序列化它的引用，这是序列化流里会有个标识为r以及加入_refs时的顺序ref，如果找不到，就把它放到这个map里。<br>    反序列化时，读取map，遍历，对key和value分别反解析并放到map中，中间采用了大量的递归调用。本地维护了一个ArrayList ：<code>_refs</code>（同名不同的数据结构），每一个对象在被反解析时（基本、包装类型除外），会将自己本身加入到该list中。读到对象类型为r时，会从<code>_refs</code>里直接获取该对象，get(index)，index为序列化时写入的ref，直接将字段set为获取的对象。<br>    hessian并没有在序列化时将<code>_refs</code>表通过网络传过去，而是通过同样的解析和反解析顺序，保证了两边从<code>_refs</code>里获取对象的一致性。那么，它就要保证添加Ref和读取Ref的逻辑是一致的，如果不一致就会出现类型不一致的异常。</p>
+<p>_refs是hessian实现的一个类似hashmap的数据结构，有自己的散列和rehash。key是被序列化对象，value是加入时<code>_refs</code>的的大小。get是通过判断内存地址来比较的。如果找到一样的，就序列化它的引用，这是序列化流里会有个标识为r以及加入_refs时的顺序ref，如果找不到，就把它放到这个map里。<br>反序列化时，读取map，遍历，对key和value分别反解析并放到map中，中间采用了大量的递归调用。本地维护了一个ArrayList ：<code>_refs</code>（同名不同的数据结构），每一个对象在被反解析时（基本、包装类型除外），会将自己本身加入到该list中。读到对象类型为r时，会从<code>_refs</code>里直接获取该对象，get(index)，index为序列化时写入的ref，直接将字段set为获取的对象。<br>hessian并没有在序列化时将<code>_refs</code>表通过网络传过去，而是通过同样的解析和反解析顺序，保证了两边从<code>_refs</code>里获取对象的一致性。那么，它就要保证添加Ref和读取Ref的逻辑是一致的，如果不一致就会出现类型不一致的异常。</p>
 </blockquote>
 <h2 id="u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790"><a href="#u5E8F_u5217_u5316bug_u539F_u56E0_u5206_u6790" class="headerlink" title="序列化bug原因分析"></a>序列化bug原因分析</h2><blockquote>
 <p>那么我们的service为什么会出错呢？因为hessian在序列化时Timestamp是走的SqlDateSerializer，这个序列化器是会加入到_refs这个map里的，但是读取的时候，Timestamp却不会加入到客户端里地_refs表里。这时候我们两端_refs就不一致了。而phoneList在数据库phone字段为空时都会赋为ArrayUtils.EMPTY_STRING_ARRAY，它是一个final static对象。String[]是会写_refs表的，如果有第二个String[]跟第一个相等，那么它会被标记为引用类型并记下加入表时的顺序。这时候反序列化的时候timestamp是不会加入_refs的，反序列化出来String[]的ref(即list中的index)就有偏差了。java.util.Date是被视为基础类型的，服务和客户端都不会写入_refs表。</p>
