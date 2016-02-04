@@ -20,7 +20,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 <meta property="og:image" content="http://i13.tietuku.com/350a4520859515e9.png">
 <meta property="og:image" content="http://i13.tietuku.com/ab84091a0e879b92.png">
 <meta property="og:image" content="http://i13.tietuku.com/65fceaefd224c2c2.png">
-<meta property="og:updated_time" content="2016-02-04T06:35:27.000Z">
+<meta property="og:updated_time" content="2016-02-04T06:44:18.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="pigeon学习">
 <meta name="twitter:description" content="ClassLoaderjava应用环境中不同的class分别由不同的ClassLoader负责加载。一个jvm中默认的classloader有Bootstrap ClassLoader、Extension ClassLoader、App ClassLoader，分别各司其职：
@@ -316,13 +316,15 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 </ol>
 <p><strong>其中JDK中提供的创建动态代理的机制，是以a 这种思路设计的，而cglib 则是以b思路设计的。</strong></p>
 <h3 id="jdk_u52A8_u6001_u4EE3_u7406_u521B_u5EFA_u673A_u5236"><a href="#jdk_u52A8_u6001_u4EE3_u7406_u521B_u5EFA_u673A_u5236" class="headerlink" title="jdk动态代理创建机制"></a>jdk动态代理创建机制</h3><p>比如现在想为RealSubject这个类创建一个动态代理对象，JDK主要会做以下工作：</p>
-<pre><code>1. 获取 RealSubject上的所有接口列表；
-2. 确定要生成的代理类的类名，默认为：com.sun.proxy.$ProxyXXXX；
-3. 根据需要实现的接口信息，在代码中动态创建 该Proxy类的字节码；
-4. 将对应的字节码转换为对应的class 对象；
-5. 创建InvocationHandler 实例handler，用来处理Proxy所有方法调用；
-6. Proxy的class对象 以创建的handler对象为参数，实例化一个proxy对象
-</code></pre><blockquote>
+<ol>
+<li>获取 RealSubject上的所有接口列表；</li>
+<li>确定要生成的代理类的类名，默认为：com.sun.proxy.$ProxyXXXX；</li>
+<li>根据需要实现的接口信息，在代码中动态创建 该Proxy类的字节码；</li>
+<li>将对应的字节码转换为对应的class 对象；</li>
+<li>创建InvocationHandler 实例handler，用来处理Proxy所有方法调用；</li>
+<li>Proxy的class对象 以创建的handler对象为参数，实例化一个proxy对象</li>
+</ol>
+<blockquote>
 <p>[java动态代理]{<a href="http://blog.csdn.net/luanlouis/article/details/24589193}" target="_blank" rel="external">http://blog.csdn.net/luanlouis/article/details/24589193}</a></p>
 </blockquote>
 <p>JDK通过 java.lang.reflect.Proxy包来支持动态代理，一般情况下，我们使用下面的newProxyInstance方法</p>
@@ -338,7 +340,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
         <p><span>本文标题:</span><a href="/2016/02/03/pigeon学习/">pigeon学习</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 SaMichael 的个人博客">SaMichael</a></p>
         <p><span>发布时间:</span>2016年02月03日 - 18时04分</p>
-        <p><span>最后更新:</span>2016年02月04日 - 14时35分</p>
+        <p><span>最后更新:</span>2016年02月04日 - 14时44分</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2016/02/03/pigeon学习/" title="pigeon学习">http://yoursite.com/2016/02/03/pigeon学习/</a>
             <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/03/pigeon学习/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
@@ -544,7 +546,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
                 $("body").css({"background-color": bgColorList[bgColor], "background-size": "cover"});
             }
             else {
-                var backgroundnum = 4;
+                var backgroundnum = 6;
                 var backgroundimg = "url(/background/bg-x.jpg)".replace(/x/gi, Math.ceil(Math.random() * backgroundnum));
                 $("body").css({"background": backgroundimg, "background-attachment": "fixed", "background-size": "cover"});
             }
