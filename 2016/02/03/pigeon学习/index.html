@@ -20,7 +20,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 <meta property="og:image" content="http://i13.tietuku.com/350a4520859515e9.png">
 <meta property="og:image" content="http://i13.tietuku.com/ab84091a0e879b92.png">
 <meta property="og:image" content="http://i13.tietuku.com/65fceaefd224c2c2.png">
-<meta property="og:updated_time" content="2016-02-04T06:44:18.000Z">
+<meta property="og:updated_time" content="2016-02-04T06:51:22.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="pigeon学习">
 <meta name="twitter:description" content="ClassLoaderjava应用环境中不同的class分别由不同的ClassLoader负责加载。一个jvm中默认的classloader有Bootstrap ClassLoader、Extension ClassLoader、App ClassLoader，分别各司其职：
@@ -329,6 +329,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 </blockquote>
 <p>JDK通过 java.lang.reflect.Proxy包来支持动态代理，一般情况下，我们使用下面的newProxyInstance方法</p>
 <figure class="highlight delphi"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//返回一个指定接口的代理类实例，该接口可以将方法调用指派到指定的调用处理程序。</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">Object</span> newProxyInstance(ClassLoader loader,<span class="keyword">Class</span>&lt;?&gt;[] interfaces,InvocationHandler h)</span><br></pre></td></tr></table></figure>
+<p>sss</p>
 
       
     </div>
@@ -340,7 +341,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
         <p><span>本文标题:</span><a href="/2016/02/03/pigeon学习/">pigeon学习</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 SaMichael 的个人博客">SaMichael</a></p>
         <p><span>发布时间:</span>2016年02月03日 - 18时04分</p>
-        <p><span>最后更新:</span>2016年02月04日 - 14时44分</p>
+        <p><span>最后更新:</span>2016年02月04日 - 14时51分</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2016/02/03/pigeon学习/" title="pigeon学习">http://yoursite.com/2016/02/03/pigeon学习/</a>
             <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/03/pigeon学习/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
