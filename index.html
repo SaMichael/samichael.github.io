@@ -258,22 +258,13 @@
 <blockquote>
 <p>具体资料参考以下：</p>
 <ul>
-<li>[ClassLoader的几个概念、类和对象的解释]{<a href="http://blog.chinaunix.net/uid-21227800-id-65879.html}" target="_blank" rel="external">http://blog.chinaunix.net/uid-21227800-id-65879.html}</a></li>
+<li><a href="http://blog.chinaunix.net/uid-21227800-id-65879.html" target="_blank" rel="external">ClassLoader的几个念、类和对象的解释</a></li>
 <li>深入理解java虚拟机</li>
 </ul>
 </blockquote>
 <h2 id="Class-forName_28_29"><a href="#Class-forName_28_29" class="headerlink" title="Class.forName()"></a>Class.forName()</h2><blockquote>
-<p>[Class.forName()作用与总结]{<a href="http://blog.csdn.net/fengyuzhengfan/article/details/38086743?utm_source=tuicool&amp;utm_medium=referral}" target="_blank" rel="external">http://blog.csdn.net/fengyuzhengfan/article/details/38086743?utm_source=tuicool&amp;utm_medium=referral}</a></p>
+<p><a href="http://blog.csdn.net/fengyuzhengfan/article/details/38086743?utm_source=tuicool&amp;utm_medium=referral" target="_blank" rel="external">Class.forName()作用与总结</a></p>
 </blockquote>
-<h2 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h2><ul>
-<li>作用：根据序列化方式，返回对应的序列化类</li>
-<li>工厂类</li>
-<li>产品类接口Serializer:<ul>
-<li>正反序列化客户端请求</li>
-<li>正反序列化服务器端返回值</li>
-</ul>
-</li>
-</ul>
 <h2 id="jdk_u52A8_u6001_u4EE3_u7406"><a href="#jdk_u52A8_u6001_u4EE3_u7406" class="headerlink" title="jdk动态代理"></a>jdk动态代理</h2><p>代理模式上，基本上有Subject角色，RealSubject角色，Proxy角色。其中：Subject角色负责定义RealSubject和Proxy角色应该实现的接口；RealSubject角色用来真正完成业务服务功能；Proxy角色负责将自身的Request请求，调用realsubject 对应的request功能来实现业务功能，自己不真正做业务。</p>
 <p><img src="http://i13.tietuku.com/350a4520859515e9.png" alt="静态代理类图"></p>
 <p>上面的这幅代理结构图是典型的静态的代理模式：</p>
@@ -306,11 +297,35 @@
 <li>Proxy的class对象 以创建的handler对象为参数，实例化一个proxy对象</li>
 </ol>
 <blockquote>
-<p>[java动态代理]{<a href="http://blog.csdn.net/luanlouis/article/details/24589193}" target="_blank" rel="external">http://blog.csdn.net/luanlouis/article/details/24589193}</a></p>
+<p>下面这篇文章写得非常好，深入浅出讲解了动态代理，强烈推荐：<br><a href="http://blog.csdn.net/luanlouis/article/details/24589193" target="_blank" rel="external">java动态代理</a></p>
 </blockquote>
 <p>JDK通过 java.lang.reflect.Proxy包来支持动态代理，一般情况下，我们使用下面的newProxyInstance方法</p>
 <figure class="highlight delphi"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//返回一个指定接口的代理类实例，该接口可以将方法调用指派到指定的调用处理程序。</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">Object</span> newProxyInstance(ClassLoader loader,<span class="keyword">Class</span>&lt;?&gt;[] interfaces,InvocationHandler h)</span><br></pre></td></tr></table></figure>
-<p>sss</p>
+<p>##SPI机制</p>
+<p>###SPI的思想<br>SPI的全名为Service Provider Interface普通开发人员可能不熟悉，因为这个是针对服务提供厂商与扩展框架功能的开发者的。在java.util.ServiceLoader的文档里有比较详细的介绍。究其思想，其实是和”Callback”差不多。“Callback”的思想是在我们调用API的时候，我们可以自己写一段逻辑代码，传入到API里面，API内部在合适的时候会调用它，从而实现某种程度的“定制”。</p>
+<p>我们系统里抽象的各个模块，往往有很多不同的实现方案，比如日志模块的方案，xml解析模块、jdbc模块的方案等。面向的对象的设计里，我们一般推荐模块之间基于接口编程，模块之间不对实现类进行硬编码。一旦代码里涉及具体的实现类，就违反了可拔插的原则，如果需要替换一种实现，就需要修改代码。</p>
+<p>为了实现在模块装配的时候能不在程序里动态指明，这就需要一种服务发现机制。java spi就是提供这样的一个机制：为某个接口寻找服务实现的机制。有点类似IOC的思想，就是将装配的控制权移到程序之外，在模块化设计中这个机制尤其重要。</p>
+<p>###JAVA SPI的约定<br>当服务的提供者，提供了服务接口的一种实现之后，在jar包的META-INF/services/目录里同时创建一个以服务接口命名的文件。该文件里就是实现该服务接口的具体实现类。而当外部程序装配这个模块的时候，就能通过该jar包META-INF/services/里的配置文件找到具体的实现类名，并装载实例化，完成模块的注入。服务厂商实现的jar包你需要放到classpath下。</p>
+<p>基于这样一个约定就能很好的找到服务接口的实现类，而不需要再代码里制定。</p>
+<p>jdk提供服务实现查找的一个工具类：java.util.ServiceLoader</p>
+<blockquote>
+<p>SPI扩展阅读：</p>
+<ul>
+<li><a href="http://blog.csdn.net/comkingfly/article/details/7645245?utm_source=tuicool&amp;utm_medium=referral" target="_blank" rel="external">Java spi机制 面向接口的编程</a></li>
+</ul>
+</blockquote>
+<h3 id="ServiceLoader"><a href="#ServiceLoader" class="headerlink" title="ServiceLoader"></a>ServiceLoader</h3><p>以pigeon为例，在pigeon-remoting项目中，文件名以服务接口类定义，文件路径如下：<br><code>META-INF/services/com.dianping.pigeon.provider.Server</code></p>
+<p>文件内容要求很简单，每一行放一个这个接口的一个实现类的类型名称（包含包名和类名），比如:<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.netty</span><span class="class">.provider</span><span class="class">.NettyServer</span></span><br><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.http</span><span class="class">.provider</span><span class="class">.JettyHttpServer</span></span><br></pre></td></tr></table></figure></p>
+<p>这时候ServiceLoader会帮我们去扫描classpath下所有的META-INF/services/目录，如果包含com.dianping.pigeon.provider.Server文件，他初始化配置文件中的服务提供方实例，每一条记录都会对应一个服务实例。</p>
+<h2 id="pigeon_u521D_u59CB_u5316"><a href="#pigeon_u521D_u59CB_u5316" class="headerlink" title="pigeon初始化"></a>pigeon初始化</h2><h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
+<li>作用：根据序列化方式，返回对应的序列化类</li>
+<li>工厂类</li>
+<li>产品类接口Serializer:<ul>
+<li>正反序列化客户端请求</li>
+<li>正反序列化服务器端返回值</li>
+</ul>
+</li>
+</ul>
 
       
     </div>
