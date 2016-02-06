@@ -20,7 +20,8 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 <meta property="og:image" content="http://i13.tietuku.com/350a4520859515e9.png">
 <meta property="og:image" content="http://i13.tietuku.com/ab84091a0e879b92.png">
 <meta property="og:image" content="http://i13.tietuku.com/65fceaefd224c2c2.png">
-<meta property="og:updated_time" content="2016-02-06T04:52:37.000Z">
+<meta property="og:image" content="http://i12.tietuku.com/d5ff25c13ebc9b54.png">
+<meta property="og:updated_time" content="2016-02-06T08:24:31.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="pigeon学习">
 <meta name="twitter:description" content="ClassLoaderjava应用环境中不同的class分别由不同的ClassLoader负责加载。一个jvm中默认的classloader有Bootstrap ClassLoader、Extension ClassLoader、App ClassLoader，分别各司其职：
@@ -320,11 +321,10 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 </blockquote>
 <p>JDK通过 java.lang.reflect.Proxy包来支持动态代理，一般情况下，我们使用下面的newProxyInstance方法</p>
 <figure class="highlight delphi"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//返回一个指定接口的代理类实例，该接口可以将方法调用指派到指定的调用处理程序。</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">Object</span> newProxyInstance(ClassLoader loader,<span class="keyword">Class</span>&lt;?&gt;[] interfaces,InvocationHandler h)</span><br></pre></td></tr></table></figure>
-<p>##SPI机制</p>
-<p>###SPI的思想<br>SPI的全名为Service Provider Interface普通开发人员可能不熟悉，因为这个是针对服务提供厂商与扩展框架功能的开发者的。在java.util.ServiceLoader的文档里有比较详细的介绍。究其思想，其实是和”Callback”差不多。“Callback”的思想是在我们调用API的时候，我们可以自己写一段逻辑代码，传入到API里面，API内部在合适的时候会调用它，从而实现某种程度的“定制”。</p>
+<h2 id="SPI_u673A_u5236"><a href="#SPI_u673A_u5236" class="headerlink" title="SPI机制"></a>SPI机制</h2><h3 id="SPI_u7684_u601D_u60F3"><a href="#SPI_u7684_u601D_u60F3" class="headerlink" title="SPI的思想"></a>SPI的思想</h3><p>SPI的全名为Service Provider Interface普通开发人员可能不熟悉，因为这个是针对服务提供厂商与扩展框架功能的开发者的。在java.util.ServiceLoader的文档里有比较详细的介绍。究其思想，其实是和”Callback”差不多。“Callback”的思想是在我们调用API的时候，我们可以自己写一段逻辑代码，传入到API里面，API内部在合适的时候会调用它，从而实现某种程度的“定制”。</p>
 <p>我们系统里抽象的各个模块，往往有很多不同的实现方案，比如日志模块的方案，xml解析模块、jdbc模块的方案等。面向的对象的设计里，我们一般推荐模块之间基于接口编程，模块之间不对实现类进行硬编码。一旦代码里涉及具体的实现类，就违反了可拔插的原则，如果需要替换一种实现，就需要修改代码。</p>
 <p>为了实现在模块装配的时候能不在程序里动态指明，这就需要一种服务发现机制。java spi就是提供这样的一个机制：为某个接口寻找服务实现的机制。有点类似IOC的思想，就是将装配的控制权移到程序之外，在模块化设计中这个机制尤其重要。</p>
-<p>###JAVA SPI的约定<br>当服务的提供者，提供了服务接口的一种实现之后，在jar包的META-INF/services/目录里同时创建一个以服务接口命名的文件。该文件里就是实现该服务接口的具体实现类。而当外部程序装配这个模块的时候，就能通过该jar包META-INF/services/里的配置文件找到具体的实现类名，并装载实例化，完成模块的注入。服务厂商实现的jar包你需要放到classpath下。</p>
+<h3 id="JAVA_SPI_u7684_u7EA6_u5B9A"><a href="#JAVA_SPI_u7684_u7EA6_u5B9A" class="headerlink" title="JAVA SPI的约定"></a>JAVA SPI的约定</h3><p>当服务的提供者，提供了服务接口的一种实现之后，在jar包的META-INF/services/目录里同时创建一个以服务接口命名的文件。该文件里就是实现该服务接口的具体实现类。而当外部程序装配这个模块的时候，就能通过该jar包META-INF/services/里的配置文件找到具体的实现类名，并装载实例化，完成模块的注入。服务厂商实现的jar包你需要放到classpath下。</p>
 <p>基于这样一个约定就能很好的找到服务接口的实现类，而不需要再代码里制定。</p>
 <p>jdk提供服务实现查找的一个工具类：java.util.ServiceLoader</p>
 <blockquote>
@@ -337,7 +337,34 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 <p>文件内容要求很简单，每一行放一个这个接口的一个实现类的类型名称（包含包名和类名），比如:<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.netty</span><span class="class">.provider</span><span class="class">.NettyServer</span></span><br><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.http</span><span class="class">.provider</span><span class="class">.JettyHttpServer</span></span><br></pre></td></tr></table></figure></p>
 <p>准备好上述后，我们就可以调用ServiceLoader获取这些服务实例：<br><figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ServiceLoader&lt;<span class="built_in">Server</span>&gt; servers = ServiceLoader.<span class="keyword">get</span>(<span class="built_in">Server</span>.<span class="keyword">class</span>);</span><br></pre></td></tr></table></figure></p>
 <p>这时候ServiceLoader会帮我们去扫描classpath下所有的META-INF/services/目录，如果包含com.dianping.pigeon.provider.Server文件，他初始化配置文件中的服务提供方实例，每一条记录都会对应一个服务实例。</p>
-<h2 id="pigeon_u521D_u59CB_u5316"><a href="#pigeon_u521D_u59CB_u5316" class="headerlink" title="pigeon初始化"></a>pigeon初始化</h2><h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
+<h2 id="pigeon_u8BBE_u8BA1_u7406_u5FF5"><a href="#pigeon_u8BBE_u8BA1_u7406_u5FF5" class="headerlink" title="pigeon设计理念"></a>pigeon设计理念</h2><h3 id="pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><a href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784" class="headerlink" title="pigeon客户端内部模块结构"></a>pigeon客户端内部模块结构</h3><p>如下图所示，pigeon各模块之间依赖抽象，而不依赖具体实现。如系统配置，依赖的是抽象的pigeon-config模块，而不是具体的pigeon-lion模块<br><img src="http://i12.tietuku.com/d5ff25c13ebc9b54.png" alt="pigeon客户端内部模块结构"></p>
+<h2 id="pigeon_u521D_u59CB_u5316"><a href="#pigeon_u521D_u59CB_u5316" class="headerlink" title="pigeon初始化"></a>pigeon初始化</h2><p>ProxyBeanFactory：实现了Spring的FactoryBean接口</p>
+<h3 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h3><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
+<h3 id="ExtensionLoader"><a href="#ExtensionLoader" class="headerlink" title="ExtensionLoader"></a>ExtensionLoader</h3><p>根据pigeon的理念，我定义一个抽象的接口，具体的实现就像插件一样可替换。所以在pigeon中，具体的配置模块、监控模块和注册模块等，都是如同可插拔的插件。ExtensionLoader就是来加载这些插件用。使用map来存储接口类对应的实现，若map中没有，则通过ServiceLoader来加载。</p>
+<p>插件分为两种，一种可替换的，非此即彼；还有一种，是可以同时存在的，类似过滤器这种概念。</p>
+<p>因此ExtensionLoader中的map有两种，一种是存的接口对应的实现（哪个实现在前面哪个被加载），一种存的是接口对应的实现list。</p>
+<h3 id="ProviderBootStrap"><a href="#ProviderBootStrap" class="headerlink" title="ProviderBootStrap"></a>ProviderBootStrap</h3><p>init():</p>
+<ol>
+<li>使用ExtensionLoader加载ConfigManager对应的实现LionConfigManager；</li>
+<li>初始化ProviderProcessHandlerFactory：<ul>
+<li>提供产品：ServiceInvocationHandler</li>
+</ul>
+</li>
+<li>初始化SerializerFactory：<ul>
+<li>提供产品：Serializer</li>
+</ul>
+</li>
+<li>使用ExtensionLoader加载Monitor对应的实现CatMonitor，并初始化</li>
+<li>启动一守护线程，用于jvm关闭时，销毁资源</li>
+<li>初始化RegisManager（注册中心？）</li>
+<li>初始化HttpServer</li>
+</ol>
+<p>总结:</p>
+<ul>
+<li>初始化最好加一个全局变量来控制，防止初始化函数被误调用</li>
+</ul>
+<p>依次初始化正常业务请求、心跳、健康监测的ServiceInvocationFilter和ServiceInvocationHandler；  </p>
+<h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
 <li>作用：根据序列化方式，返回对应的序列化类</li>
 <li>工厂类</li>
 <li>产品类接口Serializer:<ul>
@@ -357,7 +384,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
         <p><span>本文标题:</span><a href="/2016/02/03/pigeon学习/">pigeon学习</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 SaMichael 的个人博客">SaMichael</a></p>
         <p><span>发布时间:</span>2016年02月03日 - 18时04分</p>
-        <p><span>最后更新:</span>2016年02月06日 - 12时52分</p>
+        <p><span>最后更新:</span>2016年02月06日 - 16时24分</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2016/02/03/pigeon学习/" title="pigeon学习">http://yoursite.com/2016/02/03/pigeon学习/</a>
             <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/03/pigeon学习/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
@@ -387,7 +414,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 
     <div id="toc" class="toc-article">
     <strong class="toc-title">文章目录</strong>
-    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ClassLoader"><span class="toc-number">1.</span> <span class="toc-text">ClassLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Class-forName_28_29"><span class="toc-number">2.</span> <span class="toc-text">Class.forName()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#jdk_u52A8_u6001_u4EE3_u7406"><span class="toc-number">3.</span> <span class="toc-text">jdk动态代理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#InvocationHandler"><span class="toc-number">3.1.</span> <span class="toc-text">InvocationHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jdk_u52A8_u6001_u4EE3_u7406_u521B_u5EFA_u673A_u5236"><span class="toc-number">3.2.</span> <span class="toc-text">jdk动态代理创建机制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ServiceLoader"><span class="toc-number">3.3.</span> <span class="toc-text">ServiceLoader</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pigeon_u521D_u59CB_u5316"><span class="toc-number">4.</span> <span class="toc-text">pigeon初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SerializerFactory"><span class="toc-number">4.1.</span> <span class="toc-text">SerializerFactory</span></a></li></ol></li></ol>
+    <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ClassLoader"><span class="toc-number">1.</span> <span class="toc-text">ClassLoader</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Class-forName_28_29"><span class="toc-number">2.</span> <span class="toc-text">Class.forName()</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#jdk_u52A8_u6001_u4EE3_u7406"><span class="toc-number">3.</span> <span class="toc-text">jdk动态代理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#InvocationHandler"><span class="toc-number">3.1.</span> <span class="toc-text">InvocationHandler</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jdk_u52A8_u6001_u4EE3_u7406_u521B_u5EFA_u673A_u5236"><span class="toc-number">3.2.</span> <span class="toc-text">jdk动态代理创建机制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#SPI_u673A_u5236"><span class="toc-number">4.</span> <span class="toc-text">SPI机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#SPI_u7684_u601D_u60F3"><span class="toc-number">4.1.</span> <span class="toc-text">SPI的思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#JAVA_SPI_u7684_u7EA6_u5B9A"><span class="toc-number">4.2.</span> <span class="toc-text">JAVA SPI的约定</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ServiceLoader"><span class="toc-number">4.3.</span> <span class="toc-text">ServiceLoader</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pigeon_u8BBE_u8BA1_u7406_u5FF5"><span class="toc-number">5.</span> <span class="toc-text">pigeon设计理念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><span class="toc-number">5.1.</span> <span class="toc-text">pigeon客户端内部模块结构</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pigeon_u521D_u59CB_u5316"><span class="toc-number">6.</span> <span class="toc-text">pigeon初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#InvokerConfig"><span class="toc-number">6.1.</span> <span class="toc-text">InvokerConfig</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ExtensionLoader"><span class="toc-number">6.2.</span> <span class="toc-text">ExtensionLoader</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ProviderBootStrap"><span class="toc-number">6.3.</span> <span class="toc-text">ProviderBootStrap</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#SerializerFactory"><span class="toc-number">6.4.</span> <span class="toc-text">SerializerFactory</span></a></li></ol></li></ol>
 </div>
 <style>
     .left-col .switch-btn {
