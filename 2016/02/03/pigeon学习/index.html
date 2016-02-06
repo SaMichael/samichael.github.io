@@ -20,7 +20,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 <meta property="og:image" content="http://i13.tietuku.com/350a4520859515e9.png">
 <meta property="og:image" content="http://i13.tietuku.com/ab84091a0e879b92.png">
 <meta property="og:image" content="http://i13.tietuku.com/65fceaefd224c2c2.png">
-<meta property="og:updated_time" content="2016-02-05T03:58:36.000Z">
+<meta property="og:updated_time" content="2016-02-06T04:52:37.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="pigeon学习">
 <meta name="twitter:description" content="ClassLoaderjava应用环境中不同的class分别由不同的ClassLoader负责加载。一个jvm中默认的classloader有Bootstrap ClassLoader、Extension ClassLoader、App ClassLoader，分别各司其职：
@@ -335,6 +335,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
 </blockquote>
 <h3 id="ServiceLoader"><a href="#ServiceLoader" class="headerlink" title="ServiceLoader"></a>ServiceLoader</h3><p>以pigeon为例，在pigeon-remoting项目中，文件名以服务接口类定义，文件路径如下：<br><code>META-INF/services/com.dianping.pigeon.provider.Server</code></p>
 <p>文件内容要求很简单，每一行放一个这个接口的一个实现类的类型名称（包含包名和类名），比如:<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.netty</span><span class="class">.provider</span><span class="class">.NettyServer</span></span><br><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.http</span><span class="class">.provider</span><span class="class">.JettyHttpServer</span></span><br></pre></td></tr></table></figure></p>
+<p>准备好上述后，我们就可以调用ServiceLoader获取这些服务实例：<br><figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ServiceLoader&lt;<span class="built_in">Server</span>&gt; servers = ServiceLoader.<span class="keyword">get</span>(<span class="built_in">Server</span>.<span class="keyword">class</span>);</span><br></pre></td></tr></table></figure></p>
 <p>这时候ServiceLoader会帮我们去扫描classpath下所有的META-INF/services/目录，如果包含com.dianping.pigeon.provider.Server文件，他初始化配置文件中的服务提供方实例，每一条记录都会对应一个服务实例。</p>
 <h2 id="pigeon_u521D_u59CB_u5316"><a href="#pigeon_u521D_u59CB_u5316" class="headerlink" title="pigeon初始化"></a>pigeon初始化</h2><h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
 <li>作用：根据序列化方式，返回对应的序列化类</li>
@@ -356,7 +357,7 @@ Bootstrap ClassLoader:负责加载java基础类，主要是 %JRE_HOME/lib/ 目�
         <p><span>本文标题:</span><a href="/2016/02/03/pigeon学习/">pigeon学习</a></p>
         <p><span>文章作者:</span><a href="/" title="访问 SaMichael 的个人博客">SaMichael</a></p>
         <p><span>发布时间:</span>2016年02月03日 - 18时04分</p>
-        <p><span>最后更新:</span>2016年02月05日 - 11时58分</p>
+        <p><span>最后更新:</span>2016年02月06日 - 12时52分</p>
         <p>
             <span>原始链接:</span><a class="post-url" href="/2016/02/03/pigeon学习/" title="pigeon学习">http://yoursite.com/2016/02/03/pigeon学习/</a>
             <span class="copy-path" data-clipboard-text="原文: http://yoursite.com/2016/02/03/pigeon学习/　　作者: SaMichael" title="点击复制文章链接"><i class="fa fa-clipboard"></i></span>
