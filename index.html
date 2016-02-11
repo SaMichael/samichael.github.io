@@ -317,12 +317,156 @@
 <p>文件内容要求很简单，每一行放一个这个接口的一个实现类的类型名称（包含包名和类名），比如:<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.netty</span><span class="class">.provider</span><span class="class">.NettyServer</span></span><br><span class="line">com<span class="class">.dianping</span><span class="class">.pigeon</span><span class="class">.remoting</span><span class="class">.http</span><span class="class">.provider</span><span class="class">.JettyHttpServer</span></span><br></pre></td></tr></table></figure></p>
 <p>准备好上述后，我们就可以调用ServiceLoader获取这些服务实例：<br><figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ServiceLoader&lt;<span class="built_in">Server</span>&gt; servers = ServiceLoader.<span class="keyword">get</span>(<span class="built_in">Server</span>.<span class="keyword">class</span>);</span><br></pre></td></tr></table></figure></p>
 <p>这时候ServiceLoader会帮我们去扫描classpath下所有的META-INF/services/目录，如果包含com.dianping.pigeon.provider.Server文件，他初始化配置文件中的服务提供方实例，每一条记录都会对应一个服务实例。</p>
-<h2 id="pigeon_u8BBE_u8BA1_u7406_u5FF5"><a href="#pigeon_u8BBE_u8BA1_u7406_u5FF5" class="headerlink" title="pigeon设计理念"></a>pigeon设计理念</h2><h3 id="pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><a href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784" class="headerlink" title="pigeon客户端内部模块结构"></a>pigeon客户端内部模块结构</h3><p>如下图所示，pigeon各模块之间依赖抽象，而不依赖具体实现。如系统配置，依赖的是抽象的pigeon-config模块，而不是具体的pigeon-lion模块<br><img src="http://i12.tietuku.com/d5ff25c13ebc9b54.png" alt="pigeon客户端内部模块结构"></p>
-<h2 id="pigeon_u521D_u59CB_u5316"><a href="#pigeon_u521D_u59CB_u5316" class="headerlink" title="pigeon初始化"></a>pigeon初始化</h2><p>ProxyBeanFactory：实现了Spring的FactoryBean接口</p>
+<h2 id="zookeeper"><a href="#zookeeper" class="headerlink" title="zookeeper"></a>zookeeper</h2><h3 id="u6570_u636E_u6A21_u578B"><a href="#u6570_u636E_u6A21_u578B" class="headerlink" title="数据模型"></a>数据模型</h3><p>zookeeper使用了一个类似文件系统的树结构，数据可以挂在某个节点上，可以对这个节点进行删改，当改动一个节点时，集群中活着的机器都会更新到一致的数据。<br><img src="http://i12.tietuku.com/06811f196ca6d34e.png" alt=""></p>
+<ul>
+<li>每个节点在zookeeper中叫做znode,并且其有一个唯一的路径标识，如/SERVER2节点的标识就为/APP3/SERVER2；</li>
+<li>znode可以有子znode，并且znode里可以存数据，但是EPHEMERAL类型的节点不能有子节点；</li>
+<li>znode中的数据可以有多个版本，比如某一个路径下存有多个数据版本，那么查询这个路径下的数据就需要带上版本；</li>
+<li>znode可以是临时节点，一旦创建这个znode的客户端与服务器失去联系，这个znode也将自动删除，Zookeeper的客户端和服务器通信采用长连接方式，每个客户端和  服务器通过心跳来保持连接，这个连接状态称为session，如果znode是临时节点，这个session失效，znode也就删除了。</li>
+<li>znode的目录名可以自动编号，如App1已经存在，再创建的话，将会自动命名为App2；</li>
+<li>znode可以被监控，包括这个目录节点中存储的数据的修改，子节点目录的变化等，一旦变化可以通知设置监控的客户端，这个功能是zookeeper对于应用最重要的特性，通过这个特性可以实现的功能包括配置的集中管理，集群管理，分布式锁等等。</li>
+</ul>
+<h3 id="u4F7F_u7528_u573A_u666F"><a href="#u4F7F_u7528_u573A_u666F" class="headerlink" title="使用场景"></a>使用场景</h3><h4 id="u914D_u7F6E_u7BA1_u7406"><a href="#u914D_u7F6E_u7BA1_u7406" class="headerlink" title="配置管理"></a>配置管理</h4><p>集中式的配置管理在应用集群中是非常常见的，一般商业公司内部都会实现一套集中的配置管理中心，应对不同的应用集群对于共享各自配置的需求，并且在配置变更时能够通知到集群中的每一个机器。</p>
+<p>zookeeper很容易实现这种集中式的配置管理，比如将APP1的所有配置配置到/APP1 znode下，APP1所有机器一启动就对/APP1这个节点进行监控(zk.exist(“/APP1”,true)),并且实现回调方法Watcher，那么在zookeeper上/APP1 znode节点下数据发生变化的时候，每个机器都会收到通知，Watcher方法将会被执行，那么应用再取下数据即可(zk.getData(“/APP1”,false,null));</p>
+<p>我们的lion，点评配置管理系统就是基于zookeeper来实现</p>
+<h3 id="u96C6_u7FA4_u7BA1_u7406"><a href="#u96C6_u7FA4_u7BA1_u7406" class="headerlink" title="集群管理"></a>集群管理</h3><p>应用集群中，我们常常需要让每一个机器知道集群中（或依赖的其他某一个集群）哪些机器是活着的，并且在集群机器因为宕机，网络断链等原因能够不在人工介入的情况下迅速通知到每一个机器。</p>
+<p>Zookeeper同样很容易实现这个功能，比如我在zookeeper服务器端有一个znode叫/APP1SERVERS,那么集群中每一个机器启动的时候都去这个节点下创建一个EPHEMERAL类型的节点，比如server1创建/APP1SERVERS/SERVER1(可以使用ip,保证不重复)，server2创建/APP1SERVERS/SERVER2，然后SERVER1和SERVER2都watch /APP1SERVERS这个父节点，那么也就是这个父节点下数据或者子节点变化都会通知对该节点进行watch的客户端。因为EPHEMERAL类型节点有一个很重要的特性，就是客户端和服务器端连接断掉或者session过期就会使节点消失，那么在某一个机器挂掉或者断链的时候，其对应的节点就会消失，然后集群中所有对/APP1SERVERS进行watch的客户端都会收到通知，然后取得最新列表即可。</p>
+<h2 id="pigeon_u8BBE_u8BA1"><a href="#pigeon_u8BBE_u8BA1" class="headerlink" title="pigeon设计"></a>pigeon设计</h2><h3 id="pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><a href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784" class="headerlink" title="pigeon客户端内部模块结构"></a>pigeon客户端内部模块结构</h3><p>如下图所示，pigeon各模块之间依赖抽象，而不依赖具体实现。如系统配置，依赖的是抽象的pigeon-config模块，而不是具体的pigeon-lion模块<br><img src="http://i12.tietuku.com/d5ff25c13ebc9b54.png" alt="pigeon客户端内部模块结构"></p>
+<h3 id="zookeeper_u7684_u534F_u8BAE_u683C_u5F0F"><a href="#zookeeper_u7684_u534F_u8BAE_u683C_u5F0F" class="headerlink" title="zookeeper的协议格式"></a>zookeeper的协议格式</h3><p>每台机器的/data/webapps/config/appenv里会写上所处环境和zk地址，例如：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">deployenv=qa</span><br><span class="line">zkserver=<span class="number">10.66</span><span class="number">.13</span><span class="number">.144</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.11</span><span class="number">.251</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.13</span><span class="number">.167</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.32</span><span class="number">.77</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.33</span><span class="number">.203</span>:<span class="number">2181</span></span><br></pre></td></tr></table></figure></p>
+<ul>
+<li>服务地址配置(ps：下文的+为字符串连接符，并非代表)：<ul>
+<li>/DP/SERVER/  +  enscape(serviceName)，举例：/DP/SERVER/http:^^service.dianping.com^takeawayApiService^takeawayElemeActivityService_1.0.0，为了不让serviceName里的”/“让zookeeper误认为是节点，因此将”/“替换为”^”。</li>
+<li>上述znode的值是服务ip加端口号，如192.168.8.120:4088</li>
+</ul>
+</li>
+<li>服务权重配置<ul>
+<li>/DP/WEIGHT/ip:port</li>
+<li>值为1代表权重，如果为0代表这台机器暂时不提供服务，目前只有1和0两种值</li>
+</ul>
+</li>
+<li>服务所属应用配置<ul>
+<li>/DP/APP/ip:port</li>
+<li>值为这个服务所属的应用名，这个应用名是读取本地classpath下META-INF/app.properties里的app.name值</li>
+</ul>
+</li>
+</ul>
+<h2 id="pigeon_u5BA2_u6237_u7AEF_u521D_u59CB_u5316"><a href="#pigeon_u5BA2_u6237_u7AEF_u521D_u59CB_u5316" class="headerlink" title="pigeon客户端初始化"></a>pigeon客户端初始化</h2><p>服务是通过spring的xml来配置，使用ProxyBeanFactory来定制实现一个类。</p>
+<p>ProxyBeanFactory：实现了Spring的FactoryBean接口，用于在客户端建造Service类。通过getObject()返回动态代理后的类，初始化方法init()。</p>
+<p>init()方法：</p>
+<ol>
+<li>用ClassLoader装载接口类</li>
+<li>构造该Service对应的InvokerConfig</li>
+<li>ServiceFactory调用ServiceProxy.getService(InvokerConfig)：<ul>
+<li>触发ServiceFactory的静态初始化</li>
+<li>调用ProviderBootStrap的init()</li>
+</ul>
+</li>
+<li>ServiceProxy.getService(InvokerConfig)的内部流程:<br> a. 调用InvokerBootStrap的初始化：初始化客户端的相关资源<br> b. 通过DefaultSerializer（Serializer的默认实现）的proxyRequest()，构造一个动态代理请求的对象（ps：java的动态代理）。其业务逻辑是由ServiceInvocationProxy来实现<br> c. LoadBalanceManager注册服务对应的LoadBalance策略类<br> d. ClientManager初始化<pre><code>- 启动线程池执行HeartBeatListener任务；
+- 启动线程池执行ReConnectListener任务；
+- ClusterListenerManager添加DefaultClusterListener，HeartBeatListener，ReConnectListener；
+- RegistryEventListener（或者称之为RegistryEventListenerManager表意更合适些）添加ClientManager.InnerServiceProviderChangeListener，ClientManager.InnerRegistryConnectionListener
+</code></pre> e. ClientManager注册该service对应的所有client<pre><code>- 先通过注册中心RegistryManager找到对应服务地址，即ip:port,ip:port
+- 再根据地址，找到对应的权重
+- 将上述已知信息存储到RegistryManager的map中
+- 根据上述connect信息来决定构造netty还是http client，并将该client存储到DefaultClusterListener的map中，HeartBeatListener，ReConnectListener均持有该map的引用
+</code></pre> f. 将InvokerConfig对应的动态代理的service存储到map中，InvokerConfig本身的hashcode是由其每个字段的值来确定的</li>
+</ol>
+<h2 id="InvokerBootStrap"><a href="#InvokerBootStrap" class="headerlink" title="InvokerBootStrap"></a>InvokerBootStrap</h2><p>stratup():</p>
+<ol>
+<li>用线程池执行服务调用超时检测的任务    <strong><em>何时加入服务？</em></strong></li>
+<li>InvokerProcessHandlerFactory的初始化：<ul>
+<li>采用了责任链设计模式</li>
+<li>依次初始化了ClusterInvokeFilter，GatewayInvokeFilter，RemoteCallMonitorInvokeFilter，ContextPrepareInvokeFilter，RemoteCallInvokeFilter</li>
+<li>构造了一个匿名的ServiceInvocationHandler，它本身包装了一个Filter，并拥有下一个filter的引用（下一个即filter的初始化顺序）</li>
+<li>对外最终返回的产品是包装了ClusterInvokeFilter的匿名Handler</li>
+</ul>
+</li>
+<li>初始化SerializerFactory：<ul>
+<li>提供产品：Serializer</li>
+</ul>
+</li>
+<li>使用ExtensionLoader加载Monitor对应的实现CatMonitor，并初始化</li>
+</ol>
 <h3 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h3><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
+<h3 id="RegistryManager"><a href="#RegistryManager" class="headerlink" title="RegistryManager"></a>RegistryManager</h3><p>Registry主要用于服务的注册和发现。RegistryManager类似一个策略管理类，Registry即是策略，不同的策略实现由ExtensionLoader来加载。RegistryManager包装了Registry的服务，并决定使用了哪个策略来实现服务并对外暴露。</p>
 <h3 id="ExtensionLoader"><a href="#ExtensionLoader" class="headerlink" title="ExtensionLoader"></a>ExtensionLoader</h3><p>根据pigeon的理念，我定义一个抽象的接口，具体的实现就像插件一样可替换。所以在pigeon中，具体的配置模块、监控模块和注册模块等，都是如同可插拔的插件。ExtensionLoader就是来加载这些插件用。使用map来存储接口类对应的实现，若map中没有，则通过ServiceLoader来加载。</p>
 <p>插件分为两种，一种可替换的，非此即彼；还有一种，是可以同时存在的，类似过滤器这种概念。</p>
 <p>因此ExtensionLoader中的map有两种，一种是存的接口对应的实现（哪个实现在前面哪个被加载），一种存的是接口对应的实现list。</p>
+<h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
+<li>作用：根据序列化方式，返回对应的序列化类</li>
+<li>工厂类</li>
+<li>产品类接口Serializer:<ul>
+<li>正反序列化客户端请求</li>
+<li>正反序列化服务器端返回值</li>
+<li>动态代理客户端请求</li>
+</ul>
+</li>
+</ul>
+<h3 id="ClusterListenerManager"><a href="#ClusterListenerManager" class="headerlink" title="ClusterListenerManager"></a>ClusterListenerManager</h3><p>管理了三种listener，DefaultClusterListener，HeartBeatListener，ReConnectListener。</p>
+<p>对外暴露主要以下几个方法，addConnect(),removeConnect(),均为遍历listener实现</p>
+<p>DefaultClusterListener的addConnect()：</p>
+<ul>
+<li>调用ClientSelector根据connect来决定到底是netty还是http client</li>
+<li>将client存储到本地map中</li>
+</ul>
+<h3 id="ClientSelector"><a href="#ClientSelector" class="headerlink" title="ClientSelector"></a>ClientSelector</h3><p>抽象工厂模式：抽象工厂ClientFactory，两个实现类：HttpInvokerClientFactory，NettyClientFactory。产出的产品接口Client，分别两种产品HttpClient,NettyClient。</p>
+<p>通过connect信息来决定到底使用哪个具体工厂</p>
+<h2 id="Pigeon_u5BA2_u6237_u7AEF_u8BF7_u6C42_u8FC7_u7A0B"><a href="#Pigeon_u5BA2_u6237_u7AEF_u8BF7_u6C42_u8FC7_u7A0B" class="headerlink" title="Pigeon客户端请求过程"></a>Pigeon客户端请求过程</h2><p>ServiceInvocationProxy是实现了InvocationHandler(jdk) 的类，但其实际业务是由ServiceInvocationHandler——InvokerProcessHandlerFactory的产品来实现的。</p>
+<h3 id="InvokerProcessHandlerFactory"><a href="#InvokerProcessHandlerFactory" class="headerlink" title="InvokerProcessHandlerFactory"></a>InvokerProcessHandlerFactory</h3><ul>
+<li>产品是ServiceInvocationHandler</li>
+<li>ServiceInvocationHandler包装了ServiceInvocationFilter</li>
+<li>ServiceInvocationHandler采用了责任链的设计模式，指明了下一个处理的handler是哪个</li>
+<li>责任链的顺序分别是ClusterInvokeFilter，GatewayInvokeFilter，RemoteCallMonitorInvokeFilter，ContextPrepareInvokeFilter，RemoteCallInvokeFilter</li>
+</ul>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">public interface ServiceInvocationHandler &#123;</span><br><span class="line"></span><br><span class="line">    /<span class="keyword">*</span><span class="keyword">*</span></span><br><span class="line">     <span class="keyword">*</span> </span><br><span class="line">     <span class="keyword">*</span> </span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@param invocationContext</span></span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@return</span></span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@throws Throwable</span></span><br><span class="line">     <span class="keyword">*</span>/</span><br><span class="line">    InvocationResponse handle(InvocationContext invocationContext) throws Throwable;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public interface ServiceInvocationFilter<span class="variable">&lt;I extends InvocationContext&gt;</span> &#123;</span><br><span class="line"></span><br><span class="line">    /<span class="keyword">*</span><span class="keyword">*</span></span><br><span class="line">     <span class="keyword">*</span> </span><br><span class="line">     <span class="keyword">*</span> </span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@param handler</span></span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@param invocationContext</span></span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@return</span></span><br><span class="line">     <span class="keyword">*</span> <span class="comment">@throws Throwable</span></span><br><span class="line">     <span class="keyword">*</span>/</span><br><span class="line">    InvocationResponse invoke(ServiceInvocationHandler handler, I invocationContext) throws Throwable;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="ClusterInvokeFilter"><a href="#ClusterInvokeFilter" class="headerlink" title="ClusterInvokeFilter"></a>ClusterInvokeFilter</h3><p>pigeon客户端集群策略模式有4种，分别是：快速失败failfast/失败转移failover/失败忽略failsafe/并发取最快返回forking</p>
+<blockquote>
+<ul>
+<li>failfast：调用服务的一个节点失败后抛出异常返回，可以同时配置重试timeoutRetry和retries属性</li>
+<li>failover：调用服务的一个节点失败后会尝试调用另外的一个节点，可以同时配置重试timeoutRetry和retries属性</li>
+<li>failsafe：调用服务的一个节点失败后不会抛出异常，返回null，后续版本会考虑按配置默认值返回</li>
+<li>forking：同时调用服务的所有可用节点，返回调用最快的节点结果数据</li>
+</ul>
+</blockquote>
+<p>根据服务的配置来使用某个cluster，一般是failfast。连接服务一般有两种，http请求走tomcat容器或者netty走tcp连接。获取到该服务下client的list，通过RouterManager(内部主要LoadBalanceManager来获取当前合适的client，<strong><em>如WeightedLoadBalance是将调用量按从小到大排序，返回调用量最小的</em></strong>)获取到当前合适的client，并将该client设到context中，以便在handler中传递。调用下一个handler，若抛出异常，则重试。</p>
+<h3 id="GatewayInvokeFilter"><a href="#GatewayInvokeFilter" class="headerlink" title="GatewayInvokeFilter"></a>GatewayInvokeFilter</h3><p>调用InvokerStatisticsHolder的flowIn()，设置服务的app（即服务端项目的名称，配置在resources/META-INF/app.properties，服务端在注册服务到注册中心时，会将项目名称注册到zookeeper）对应的调用量，包括按天、按分、按秒的一些调用量统计。然后将请求传给下一个handler</p>
+<p>上述调用量可以通过ip:4080/stats.json来查看。</p>
+<h3 id="RemoteCallMonitorInvokeFilter"><a href="#RemoteCallMonitorInvokeFilter" class="headerlink" title="RemoteCallMonitorInvokeFilter"></a>RemoteCallMonitorInvokeFilter</h3><p>pigeon的监控打点，打出了请求的信息和配置，对当前秒、请求的大小（请求大小做了散列）打点</p>
+<p>对cat的Transaction提取了接口，cat的Transaction只是其中一实现。保证了pigeon-remotting该包没有依赖cat的具体实现</p>
+<h3 id="ContextPrepareInvokeFilter"><a href="#ContextPrepareInvokeFilter" class="headerlink" title="ContextPrepareInvokeFilter"></a>ContextPrepareInvokeFilter</h3><p>将InvocationContext中的参数抽取出来设置到InvocationRequest中去，将用户自定义的参数和pigeon内部自定义的参数传到InvocationRequest的RequestValues、GlobalValues中去。</p>
+<blockquote>
+<p>用户如何自定义参数：<br>1、简单的客户端A-&gt;服务端B的一级调用链路的参数传递<br>客户端：<br>String url = “<a href="http://service.dianping.com/com.dianping.pigeon.demo.EchoService" target="_blank" rel="external">http://service.dianping.com/com.dianping.pigeon.demo.EchoService</a>“;<br>EchoService service = ServiceFactory.getService(url, EchoService.class);<br>…<br>ContextUtils.putRequestContext(“key1”, “1”);<br>System.out.println(“service result:” + service.echo(input));<br>服务端：<br>public String echo(String input) {<br>System.out.println(ContextUtils.getLocalContext(“key1”));<br>return “echo:” + input;<br>}<br>2、服务端B-&gt;客户端A的参数传回<br>服务端：<br>ContextUtils.putResponseContext(“key1”, “1”);<br>客户端：<br>ContextUtils.getResponseContext(“key1”);<br>3、全链路传递<br>如果需要在全链路传递对象，如A-&gt;B-&gt;C-&gt;D，需要使用以下接口：<br>在A发送请求端：ContextUtils.putGlobalContext(“key1”, “1”);<br>在D接收请求端：ContextUtils.getGlobalContext(“key1”);</p>
+</blockquote>
+<h3 id="RemoteCallInvokeFilter"><a href="#RemoteCallInvokeFilter" class="headerlink" title="RemoteCallInvokeFilter"></a>RemoteCallInvokeFilter</h3><p>实际网络调用发生的地方</p>
+<p>从代码中可以看到，一共有三种timeout，分别是：服务的timeout、方法的timeout和ThreadLocal的timeout，其优先级也是依次递增。不过方法的timeout配置并没有开放出来，我们有很多服务，其不同的方法超时是不一样的，客户端配服务的timeout时被最短的模板决定了。</p>
+<p><em>从服务设计的角度来讲，不同重要性、服务响应时间的方法不应该放在一个服务中，但是pigeon给我们提供了对方法级别线程池的配置，以及自动的服务隔离措施，从这点上讲，pigeon保证了我们在代码设计时无需考虑这些额外因素，因为它把这些因素都引到了xml配置上。</em></p>
+<p>通过client调用请求，会先调用AbstractClient的实现：</p>
+<ul>
+<li>将对应服务地址（ip:port）的调用量记下来，其每次加的调用量为1.0f/weight，这个调用量会影响到loadBalance</li>
+<li>调NettyClient的doWrite()实现：</li>
+</ul>
+<h4 id="NettyClient"><a href="#NettyClient" class="headerlink" title="NettyClient"></a>NettyClient</h4><p>使用的netty3，设置的pipeline：InvokerDecoder、NettyClientHandler、InvokerEncoder</p>
+<p>InvokerEncoder：</p>
+<ul>
+<li>消息头固定7个字节：<ul>
+<li>第1-3个字节固定为：57，58，2，其中57和58写死的，但2是指序列化的方式，hessian为2</li>
+<li>第4-7个字节：消息体长度，int，占4个字节，值为消息体长度（hessian序列化字节长度）</li>
+</ul>
+</li>
+<li><p>消息体，从第8个字节开始：hessian序列化字节，对象类型为DefaultRequest和DefaultResponse</p>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> class DefaultRequest implements InvocationRequest &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">byte</span> serialize;<span class="comment">//必填，序列化类型，hessian为2</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> seq;<span class="comment">//必填，消息sequence，long型，值请从0开始递增，每个消息的sequence都不同</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> callType = <span class="number">1</span>;<span class="comment">//必填，如果调用需要返回结果，固定为1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> timeout = <span class="number">0</span>;<span class="comment">//必填，超时时间，单位毫秒</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> serviceName;<span class="comment">//必填，服务名称url，服务唯一的标识</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> methodName;<span class="comment">//必填，服务方法名称</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">Object</span>[] parameters;<span class="comment">//必填，服务方法的参数值</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> messageType = <span class="number">2</span>;<span class="comment">//必填，消息类型，服务调用固定为2，心跳为1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">Object</span> context;<span class="comment">//老的avatar-tracker上下文传递内容，如果要传递对象，需设置</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">String</span> app = <span class="string">""</span>;<span class="comment">//必填，调用者所属应用名称，在META-INF/app.properties里的app.name值</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Map&lt;<span class="keyword">String</span>, Serializable&gt; globalValues = <span class="keyword">null</span>;<span class="comment">//用于新的全局上下文传递，可不填</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Map&lt;<span class="keyword">String</span>, Serializable&gt; requestValues = <span class="keyword">null</span>;<span class="comment">//用于新的上下文传递，可不填</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> class DefaultResponse implements InvocationResponse &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> seq;<span class="comment">//返回的消息sequence，对应发送的消息sequence，long型</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="built_in">int</span> messageType;<span class="comment">//消息类型，服务调用为2，服务调用业务异常为4，服务框架异常为3，心跳为1</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">Object</span> returnVal;<span class="comment">//返回服务调用结果，如果是异常，返回类型为</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">Object</span> context;<span class="comment">//老的avatar-tracker上下文传递内容</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Map&lt;<span class="keyword">String</span>, Serializable&gt; responseValues = <span class="keyword">null</span>;<span class="comment">//用于新的上下文传递返回的结果</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>消息尾：固定11个字节</p>
+<ul>
+<li>前8个字节为消息sequence，long型，值请从0开始递增，每个消息的sequence都不同；</li>
+<li>后3个字节固定为：29，30，31</li>
+</ul>
+</li>
+</ul>
+<p>doWrite()：调用Channel的write()，若抛出异常，则返回默认返回值</p>
+<p>NettyClientHandler：获取服务端的返回值，交付NettyClient处理</p>
+<p>NettyClient处理Response，会将Response里的sequence来和之前的请求对应上<br>处理Response用了有界线程池，corePoolSize 10，maxPoolSize 100，队列大小 800</p>
+<p>下述代码是同步调用的，调用请求时将CallbackFuture和调用请求关联起来，请求发出去后，future处于blocking状态，直到被notify<br><figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (Constants.CALL_SYNC.equalsIgnoreCase(callType)) &#123;</span><br><span class="line">    CallbackFuture future = <span class="keyword">new</span> CallbackFuture();</span><br><span class="line">    response = InvokerUtils.sendRequest(client, invocationContext.getRequest(), future);</span><br><span class="line">    <span class="keyword">if</span> (response == <span class="keyword">null</span>) &#123;</span><br><span class="line">        response = future.get(timeout);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> CallbackFuture <span class="keyword">implements</span> Callback, CallFuture &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> done = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> run() &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.done = <span class="keyword">true</span>;</span><br><span class="line">            <span class="keyword">if</span> (<span class="keyword">this</span>.response.getMessageType() == Constants.MESSAGE_TYPE_SERVICE) &#123;</span><br><span class="line">                <span class="keyword">this</span>.success = <span class="keyword">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">this</span>.notifyAll();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> InvocationResponse get(<span class="keyword">long</span> timeoutMillis) <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="comment">//判断有没有超时，若没有超时，则wait</span></span><br><span class="line">            <span class="keyword">long</span> start = request.getCreateMillisTime();</span><br><span class="line">            <span class="keyword">while</span> (!<span class="keyword">this</span>.done) &#123;</span><br><span class="line">                <span class="keyword">long</span> timeoutMillis_ = timeoutMillis - (System.currentTimeMillis() - start);</span><br><span class="line">                <span class="keyword">if</span> (timeoutMillis_ &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                    sb.<span class="keyword">append</span>(<span class="string">"request timeout, current time:"</span>).<span class="keyword">append</span>(System.currentTimeMillis())</span><br><span class="line">                            .<span class="keyword">append</span>(<span class="string">"\r\nrequest:"</span>).<span class="keyword">append</span>(request).<span class="keyword">append</span>(<span class="string">"\r\nhost:"</span>).<span class="keyword">append</span>(client.getHost())</span><br><span class="line">                            .<span class="keyword">append</span>(<span class="string">":"</span>).<span class="keyword">append</span>(client.getPort());</span><br><span class="line">                    ServiceStatisticsHolder.flowOut(request, client.getAddress());</span><br><span class="line">                    NetTimeoutException e = <span class="keyword">new</span> NetTimeoutException(sb.toString());</span><br><span class="line">                    <span class="keyword">throw</span> e;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="keyword">this</span>.wait(timeoutMillis_);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            processContext();<span class="comment">//处理从服务器端传过来的自定义参数</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (response.getMessageType() == Constants.MESSAGE_TYPE_EXCEPTION) &#123;</span><br><span class="line">                RpcException cause = InvokerUtils.toRpcException(response);</span><br><span class="line">                StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                sb.<span class="keyword">append</span>(<span class="string">"remote call exception\r\nrequest:"</span>).<span class="keyword">append</span>(request).<span class="keyword">append</span>(<span class="string">"\r\nhost:"</span>)</span><br><span class="line">                        .<span class="keyword">append</span>(client.getHost()).<span class="keyword">append</span>(<span class="string">":"</span>).<span class="keyword">append</span>(client.getPort()).<span class="keyword">append</span>(<span class="string">"\r\nresponse:"</span>)</span><br><span class="line">                        .<span class="keyword">append</span>(response);</span><br><span class="line">                logger.error(sb.toString(), cause);</span><br><span class="line">                monitor.logError(sb.toString(), cause);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (response.getMessageType() == Constants.MESSAGE_TYPE_SERVICE_EXCEPTION) &#123;</span><br><span class="line">                <span class="keyword">if</span> (Constants.INVOKER_LOG_APP_EXCEPTION) &#123;</span><br><span class="line">                    Throwable cause = InvokerUtils.toApplicationException(response);</span><br><span class="line">                    StringBuilder sb = <span class="keyword">new</span> StringBuilder();</span><br><span class="line">                    sb.<span class="keyword">append</span>(<span class="string">"remote service exception\r\nrequest:"</span>).<span class="keyword">append</span>(request).<span class="keyword">append</span>(<span class="string">"\r\nhost:"</span>)</span><br><span class="line">                            .<span class="keyword">append</span>(client.getHost()).<span class="keyword">append</span>(<span class="string">":"</span>).<span class="keyword">append</span>(client.getPort()).<span class="keyword">append</span>(<span class="string">"\r\nresponse:"</span>)</span><br><span class="line">                            .<span class="keyword">append</span>(response);</span><br><span class="line">                    logger.error(sb.toString(), cause);</span><br><span class="line">                    monitor.logError(sb.toString(), cause);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>.response;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h3 id="ProviderBootStrap"><a href="#ProviderBootStrap" class="headerlink" title="ProviderBootStrap"></a>ProviderBootStrap</h3><p>init():</p>
 <ol>
 <li>使用ExtensionLoader加载ConfigManager对应的实现LionConfigManager；</li>
@@ -344,15 +488,6 @@
 <li>初始化最好加一个全局变量来控制，防止初始化函数被误调用</li>
 </ul>
 <p>依次初始化正常业务请求、心跳、健康监测的ServiceInvocationFilter和ServiceInvocationHandler；  </p>
-<h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
-<li>作用：根据序列化方式，返回对应的序列化类</li>
-<li>工厂类</li>
-<li>产品类接口Serializer:<ul>
-<li>正反序列化客户端请求</li>
-<li>正反序列化服务器端返回值</li>
-</ul>
-</li>
-</ul>
 
       
     </div>
