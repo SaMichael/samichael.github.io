@@ -373,7 +373,7 @@
 <li>pigeon中自定义标签的实现</li>
 </ul>
 </blockquote>
-<h1 id="pigeon_u8BBE_u8BA1"><a href="#pigeon_u8BBE_u8BA1" class="headerlink" title="pigeon设计"></a>pigeon设计</h1><h2 id="pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><a href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784" class="headerlink" title="pigeon客户端内部模块结构"></a>pigeon客户端内部模块结构</h2><p>如下图所示，pigeon各模块之间依赖抽象，而不依赖具体实现。如系统配置，依赖的是抽象的pigeon-config模块，而不是具体的pigeon-lion模块<br><img src="http://i12.tietuku.com/d5ff25c13ebc9b54.png" alt="pigeon客户端内部模块结构"></p>
+<h1 id="pigeon_u67B6_u6784"><a href="#pigeon_u67B6_u6784" class="headerlink" title="pigeon架构"></a>pigeon架构</h1><h2 id="pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784"><a href="#pigeon_u5BA2_u6237_u7AEF_u5185_u90E8_u6A21_u5757_u7ED3_u6784" class="headerlink" title="pigeon客户端内部模块结构"></a>pigeon客户端内部模块结构</h2><p>如下图所示，pigeon各模块之间依赖抽象，而不依赖具体实现。如系统配置，依赖的是抽象的pigeon-config模块，而不是具体的pigeon-lion模块。解耦是通过java的ServiceLoader来实现的<br><img src="http://i12.tietuku.com/d5ff25c13ebc9b54.png" alt="pigeon客户端内部模块结构"></p>
 <h2 id="zookeeper_u7684_u534F_u8BAE_u683C_u5F0F"><a href="#zookeeper_u7684_u534F_u8BAE_u683C_u5F0F" class="headerlink" title="zookeeper的协议格式"></a>zookeeper的协议格式</h2><p>每台机器的/data/webapps/config/appenv里会写上所处环境和zk地址，例如：<br><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">deployenv=qa</span><br><span class="line">zkserver=<span class="number">10.66</span><span class="number">.13</span><span class="number">.144</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.11</span><span class="number">.251</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.13</span><span class="number">.167</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.32</span><span class="number">.77</span>:<span class="number">2181</span>,<span class="number">10.66</span><span class="number">.33</span><span class="number">.203</span>:<span class="number">2181</span></span><br></pre></td></tr></table></figure></p>
 <ul>
 <li>服务地址配置(ps：下文的+为字符串连接符，并非代表)：<ul>
@@ -403,17 +403,17 @@
 <li>调用ProviderBootStrap的init()</li>
 </ul>
 </li>
-<li>ServiceProxy.getService(InvokerConfig)的内部流程:<br> a. 调用InvokerBootStrap的初始化：初始化客户端的相关资源<br> b. 通过DefaultSerializer（Serializer的默认实现）的proxyRequest()，构造一个动态代理请求的对象（ps：java的动态代理）。其业务逻辑是由ServiceInvocationProxy来实现<br> c. LoadBalanceManager注册服务对应的LoadBalance策略类<br> d. ClientManager初始化<pre><code>a) 启动线程池执行HeartBeatListener任务；
-b) 启动线程池执行ReConnectListener任务；
-c) ClusterListenerManager添加DefaultClusterListener，HeartBeatListener，ReConnectListener；
-d) RegistryEventListener（或者称之为RegistryEventListenerManager表意更合适些）添加ClientManager.InnerServiceProviderChangeListener，ClientManager.InnerRegistryConnectionListener
-</code></pre> e. ClientManager注册该service对应的所有client<pre><code>a) 先通过注册中心RegistryManager找到对应服务地址，即ip:port,ip:port
-b) 再根据地址，找到对应的权重
-c) 将上述已知信息存储到RegistryManager的map中
-e) 根据上述connect（即ip:port）信息来决定构造netty还是http client，并将该client存储到DefaultClusterListener的map中，HeartBeatListener，ReConnectListener均持有该map的引用
+<li>ServiceProxy.getService(InvokerConfig)的内部流程:<br> a. 调用InvokerBootStrap的初始化：初始化客户端的相关资源<br> b. 通过DefaultSerializer（Serializer的默认实现）的proxyRequest()，构造一个动态代理请求的对象（ps：java的动态代理）。其业务逻辑是由ServiceInvocationProxy来实现<br> c. LoadBalanceManager注册服务对应的LoadBalance策略类<br> d. ClientManager初始化<pre><code>- 启动线程池执行HeartBeatListener任务；
+- 启动线程池执行ReConnectListener任务；
+- ClusterListenerManager添加DefaultClusterListener，HeartBeatListener，ReConnectListener；
+- RegistryEventListener（或者称之为RegistryEventListenerManager表意更合适些）添加ClientManager.InnerServiceProviderChangeListener，ClientManager.InnerRegistryConnectionListener
+</code></pre> e. ClientManager注册该service对应的所有client<pre><code>- 先通过注册中心RegistryManager找到对应服务地址，即ip:port,ip:port
+- 再根据地址，找到对应的权重
+- 将上述已知信息存储到RegistryManager的map中
+- 根据上述connect（即ip:port）信息来决定构造netty还是http client，并将该client存储到DefaultClusterListener的map中，HeartBeatListener，ReConnectListener均持有该map的引用
 </code></pre> f. 将InvokerConfig对应的动态代理的service存储到map中，InvokerConfig本身的hashcode是由其每个字段的值来确定的</li>
 </ol>
-<h2 id="InvokerBootStrap"><a href="#InvokerBootStrap" class="headerlink" title="InvokerBootStrap"></a>InvokerBootStrap</h2><p>stratup():</p>
+<h3 id="InvokerBootStrap"><a href="#InvokerBootStrap" class="headerlink" title="InvokerBootStrap"></a>InvokerBootStrap</h3><p>stratup():</p>
 <ol>
 <li>用线程池执行服务调用超时检测的任务   </li>
 <li>InvokerProcessHandlerFactory的初始化：<ul>
@@ -429,7 +429,7 @@ e) 根据上述connect（即ip:port）信息来决定构造netty还是http clien
 </li>
 <li>使用ExtensionLoader加载Monitor对应的实现CatMonitor，并初始化</li>
 </ol>
-<h2 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h2><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
+<h2 id="pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0"><a href="#pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0" class="headerlink" title="pigeon客户端设计实现"></a>pigeon客户端设计实现</h2><h2 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h2><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
 <h2 id="RegistryManager"><a href="#RegistryManager" class="headerlink" title="RegistryManager"></a>RegistryManager</h2><p>Registry主要用于服务的注册和发现。RegistryManager类似一个策略管理类，Registry即是策略，不同的策略实现由ExtensionLoader来加载。RegistryManager包装了Registry的服务，并决定使用了哪个策略来实现服务并对外暴露。</p>
 <h2 id="ExtensionLoader"><a href="#ExtensionLoader" class="headerlink" title="ExtensionLoader"></a>ExtensionLoader</h2><p>根据pigeon的理念，我定义一个抽象的接口，具体的实现就像插件一样可替换。所以在pigeon中，具体的配置模块、监控模块和注册模块等，都是如同可插拔的插件。ExtensionLoader就是来加载这些插件用。使用map来存储接口类对应的实现，若map中没有，则通过ServiceLoader来加载。</p>
 <p>插件分为两种，一种可替换的，非此即彼；还有一种，是可以同时存在的，类似过滤器这种概念。</p>
