@@ -429,12 +429,14 @@
 </li>
 <li>使用ExtensionLoader加载Monitor对应的实现CatMonitor，并初始化</li>
 </ol>
-<h2 id="pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0"><a href="#pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0" class="headerlink" title="pigeon客户端设计实现"></a>pigeon客户端设计实现</h2><h2 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h2><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
-<h2 id="RegistryManager"><a href="#RegistryManager" class="headerlink" title="RegistryManager"></a>RegistryManager</h2><p>Registry主要用于服务的注册和发现。RegistryManager类似一个策略管理类，Registry即是策略，不同的策略实现由ExtensionLoader来加载。RegistryManager包装了Registry的服务，并决定使用了哪个策略来实现服务并对外暴露。</p>
-<h2 id="ExtensionLoader"><a href="#ExtensionLoader" class="headerlink" title="ExtensionLoader"></a>ExtensionLoader</h2><p>根据pigeon的理念，我定义一个抽象的接口，具体的实现就像插件一样可替换。所以在pigeon中，具体的配置模块、监控模块和注册模块等，都是如同可插拔的插件。ExtensionLoader就是来加载这些插件用。使用map来存储接口类对应的实现，若map中没有，则通过ServiceLoader来加载。</p>
+<h2 id="pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0"><a href="#pigeon_u5BA2_u6237_u7AEF_u8BBE_u8BA1_u5B9E_u73B0" class="headerlink" title="pigeon客户端设计实现"></a>pigeon客户端设计实现</h2><p>存储服务信息，即服务对应的机器、服务对应的应用信息，client的集合等等，那么pigeon内部如何管理这些信息，在发生变化时又如何通知呢（观察者模式，事件触发更新由zookeeper的watch来触发）？类图如下：<br><img src="http://i12.tietuku.com/97952e6e13b4dde9.png" alt="pigeon客户端类图"></p>
+<h3 id="InvokerConfig"><a href="#InvokerConfig" class="headerlink" title="InvokerConfig"></a>InvokerConfig</h3><p>存储了服务接口类，服务名称，超时设置，调用方式，序列化方式等，相当于服务调用的配置</p>
+<h3 id="ClientManager"><a href="#ClientManager" class="headerlink" title="ClientManager"></a>ClientManager</h3><p>ClientManager是pigeon里面最重要的一个类，注册Client、获取Client。在注册和获取中有各种各样的功能分化到各个类来实现，比如RegistryManager，ClusterListenerManager等等。ClientManager是将这些功能聚合起来，并对外暴露这些接口。</p>
+<h3 id="RegistryManager"><a href="#RegistryManager" class="headerlink" title="RegistryManager"></a>RegistryManager</h3><p>Registry主要用于服务的注册和发现。RegistryManager类似一个策略管理类，Registry即是策略，不同的策略实现由ExtensionLoader来加载。RegistryManager包装了Registry的服务，并决定使用了哪个策略来实现服务并对外暴露。</p>
+<h3 id="ExtensionLoader"><a href="#ExtensionLoader" class="headerlink" title="ExtensionLoader"></a>ExtensionLoader</h3><p>根据pigeon的理念，我定义一个抽象的接口，具体的实现就像插件一样可替换。所以在pigeon中，具体的配置模块、监控模块和注册模块等，都是如同可插拔的插件。ExtensionLoader就是来加载这些插件用。使用map来存储接口类对应的实现，若map中没有，则通过ServiceLoader来加载。</p>
 <p>插件分为两种，一种可替换的，非此即彼；还有一种，是可以同时存在的，类似过滤器这种概念。</p>
 <p>因此ExtensionLoader中的map有两种，一种是存的接口对应的实现（哪个实现在前面哪个被加载），一种存的是接口对应的实现list。</p>
-<h2 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h2><ul>
+<h3 id="SerializerFactory"><a href="#SerializerFactory" class="headerlink" title="SerializerFactory"></a>SerializerFactory</h3><ul>
 <li>作用：根据序列化方式，返回对应的序列化类</li>
 <li>工厂类</li>
 <li>产品类接口Serializer:<ul>
@@ -444,14 +446,14 @@
 </ul>
 </li>
 </ul>
-<h2 id="ClusterListenerManager"><a href="#ClusterListenerManager" class="headerlink" title="ClusterListenerManager"></a>ClusterListenerManager</h2><p>管理了三种listener，DefaultClusterListener，HeartBeatListener，ReConnectListener。</p>
+<h3 id="ClusterListenerManager"><a href="#ClusterListenerManager" class="headerlink" title="ClusterListenerManager"></a>ClusterListenerManager</h3><p>管理了三种listener，DefaultClusterListener，HeartBeatListener，ReConnectListener。</p>
 <p>对外暴露主要以下几个方法，addConnect(),removeConnect(),均为遍历listener实现</p>
 <p>DefaultClusterListener的addConnect()：</p>
 <ul>
 <li>调用ClientSelector根据connect来决定到底是netty还是http client</li>
 <li>将client存储到本地map中</li>
 </ul>
-<h2 id="ClientSelector"><a href="#ClientSelector" class="headerlink" title="ClientSelector"></a>ClientSelector</h2><p>抽象工厂模式：抽象工厂ClientFactory，两个实现类：HttpInvokerClientFactory，NettyClientFactory。产出的产品接口Client，分别两种产品HttpClient,NettyClient。</p>
+<h3 id="ClientSelector"><a href="#ClientSelector" class="headerlink" title="ClientSelector"></a>ClientSelector</h3><p>抽象工厂模式：抽象工厂ClientFactory，两个实现类：HttpInvokerClientFactory，NettyClientFactory。产出的产品接口Client，分别两种产品HttpClient,NettyClient。</p>
 <p>通过connect信息来决定到底使用哪个具体工厂</p>
 <h2 id="Pigeon_u5BA2_u6237_u7AEF_u8BF7_u6C42_u8FC7_u7A0B"><a href="#Pigeon_u5BA2_u6237_u7AEF_u8BF7_u6C42_u8FC7_u7A0B" class="headerlink" title="Pigeon客户端请求过程"></a>Pigeon客户端请求过程</h2><p>ServiceInvocationProxy是实现了InvocationHandler(jdk) 的类，但其实际业务是由ServiceInvocationHandler——InvokerProcessHandlerFactory的产品来实现的。</p>
 <h3 id="InvokerProcessHandlerFactory"><a href="#InvokerProcessHandlerFactory" class="headerlink" title="InvokerProcessHandlerFactory"></a>InvokerProcessHandlerFactory</h3><ul>
