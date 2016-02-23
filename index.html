@@ -246,7 +246,21 @@
     <div class="article-entry" itemprop="articleBody">
       
           
-        <p>code地址：<a href="http://code.dianpingoa.com/arch/pigeon2" target="_blank" rel="external">http://code.dianpingoa.com/arch/pigeon2</a><br>github开源地址：<a href="https://github.com/dianping/pigeon" target="_blank" rel="external">https://github.com/dianping/pigeon</a><br>用户使用说明参看项目中的USER_GUIDE.md</p>
+        <h1 id="pigeon_u4ECB_u7ECD"><a href="#pigeon_u4ECB_u7ECD" class="headerlink" title="pigeon介绍"></a>pigeon介绍</h1><p>pigeon是点评内部一个分布式服务治理框架，和阿里的Dubbo类似，提供高性能和透明得如同本地化调用的RPC调用服务。</p>
+<p>pigeon提供除了服务调用的基本功能外，还有服务发现、服务注册注销、服务隔离、监控分析、服务限流、服务健康检测和负载均衡。</p>
+<p>pigeon是一个强依赖spring的项目，通过spring，实现了初始化和bean的加载，以及RPC调用的透明和本地化。</p>
+<p>下图是一个pigeon请求在框架中的大概流程：<br><img src="http://i12.tietuku.com/71d7435f513f8cd2.png" alt=""><br>通过上图我们可以看到，一个完整的piegon请求需要动态代理、序列化、服务注册中心和网络请求的支持。</p>
+<p>code地址：<a href="http://code.dianpingoa.com/arch/pigeon2" target="_blank" rel="external">http://code.dianpingoa.com/arch/pigeon2</a><br>github开源地址：<a href="https://github.com/dianping/pigeon" target="_blank" rel="external">https://github.com/dianping/pigeon</a><br>用户使用说明参看项目中的USER_GUIDE.md<br>具体使用可参考其中的pigeon-demo项目，里面有各个功能如何使用的代码</p>
+<p>下文的介绍全基于你已经完整仔细且看明白了USER_GUIDE，会介绍以下各个方面：</p>
+<ul>
+<li>pigeon架构设计</li>
+<li>Pigeon模块结构及其设计</li>
+<li>Pigeon功能模块如何实现</li>
+<li>Pigeon的user-guide里面提到的配置和使用方式的作用和实现方式</li>
+<li>Pigeon客户端和服务端的初始化过程</li>
+<li>Pigeon服务调用和服务响应的过程</li>
+<li>Pigeon后台线程的功能和实现</li>
+</ul>
 <h1 id="pigeon_u4E2D_u7528_u5230_u7684_u6280_u672F"><a href="#pigeon_u4E2D_u7528_u5230_u7684_u6280_u672F" class="headerlink" title="pigeon中用到的技术"></a>pigeon中用到的技术</h1><h2 id="ClassLoader"><a href="#ClassLoader" class="headerlink" title="ClassLoader"></a>ClassLoader</h2><p>java应用环境中不同的class分别由不同的ClassLoader负责加载。<br>一个jvm中默认的classloader有Bootstrap ClassLoader、Extension ClassLoader、App ClassLoader，分别各司其职：</p>
 <blockquote>
 <ul>
